@@ -54,6 +54,12 @@ The main goals of the project are:
 
 ## 4. System Actors
 
+Each actor authenticates through a `User` account associated with exactly one `Patient`, `Doctor`, or `Staff` profile in Version 1.
+
+`User` contains shared personal information, credentials, and `AccountStatus`. Each profile references its account through `UserId`.
+
+Receptionist and Administrator are authorization roles represented by `StaffRole` on a `Staff` profile, not separate profile entities. Each Staff profile has exactly one StaffRole.
+
 ### 4.1 Patient
 
 A patient is a user who consumes healthcare services through the platform.
@@ -78,13 +84,15 @@ Newly registered patient accounts will initially remain in a `PendingVerificatio
 
 Before being allowed to book or reschedule appointments, patients must visit the hospital in person and complete an identity verification process with an authorized receptionist.
 
-After successful verification, the receptionist will activate the patient's account.
+After successful verification, the receptionist may activate an eligible `PendingVerification` account. Verification does not automatically reactivate a suspended or deactivated account.
 
 ---
 
 ### 4.2 Doctor
 
 A doctor is a medical professional registered in the platform.
+
+The Doctor profile contains `EmployeeNumber` and `MedicalLicenseNumber`.
 
 Doctors will be able to:
 
@@ -105,6 +113,8 @@ They will be created and managed by administrators.
 ### 4.3 Receptionist
 
 A receptionist is a hospital employee who assists patients with administrative operations.
+
+The receptionist has a Staff profile with `StaffRole.Receptionist` and an `EmployeeNumber`.
 
 Receptionists will be able to:
 
@@ -131,11 +141,13 @@ Receptionists will not have access to system administration functionality.
 
 An administrator is responsible for managing the platform's hospital-level configuration.
 
+The administrator has a Staff profile with `StaffRole.Administrator` and an `EmployeeNumber`.
+
 Administrators will be able to:
 
 - authenticate into the system;
 - create and manage doctor accounts;
-- create and manage receptionist accounts;
+- create and manage staff accounts for receptionists and administrators;
 - manage user account status;
 - create and manage medical specialties;
 - assign specialties to doctors;
@@ -173,6 +185,8 @@ User accounts may have states such as:
 
 Patient account verification and general account status are related but conceptually separate concerns.
 
+`PendingVerification` patients retain limited access to their account information and verification instructions. Their exact permissions remain to be defined.
+
 A patient must have an active and identity-verified account before appointment booking or rescheduling functionality is enabled.
 
 ---
@@ -194,13 +208,14 @@ Self-registered patient accounts will initially be assigned a `PendingVerificati
 
 Patients must visit the hospital and present valid identification to an authorized receptionist.
 
-After successful verification, the receptionist may activate the account.
+After successful verification, the receptionist may activate an eligible `PendingVerification` account.
 
 Relevant verification information should be auditable, including:
 
-- verification status;
-- verification timestamp;
-- user responsible for the verification.
+- `Patient.IdentityVerifiedAt`;
+- `Patient.IdentityVerifiedByUserId`.
+
+Verification status is determined from these attributes rather than a separate persisted boolean.
 
 ---
 
@@ -212,6 +227,8 @@ Relevant verification information should be auditable, including:
 - Medical specialty assignment.
 - Doctor search and filtering.
 - Doctor schedule access.
+
+`EmployeeNumber` must be unique across Doctor and Staff profiles. Version 1 does not introduce a shared Employee entity; the enforcement mechanism will be decided during database design.
 
 ---
 
@@ -238,6 +255,8 @@ The system will:
 - exclude already booked times;
 - prevent bookings outside a doctor's availability.
 
+Availability periods are persisted; bookable slots are calculated dynamically and are not persisted as separate entities in Version 1. The appointment-duration policy remains to be defined.
+
 ---
 
 ### 5.6 Appointment Management
@@ -252,6 +271,8 @@ The system will support:
 - upcoming appointment retrieval;
 - doctor schedule retrieval;
 - patient schedule retrieval.
+
+Each appointment references a Patient, a Doctor, and a MedicalSpecialty directly. Booking and rescheduling must validate that the doctor is assigned to the selected specialty.
 
 The system must prevent:
 
@@ -444,7 +465,7 @@ The system should:
 - securely manage application secrets;
 - apply reasonable rate limiting where necessary.
 
-Identity verification operations should only be available to authorized hospital staff.
+Identity verification operations should only be available to authorized staff with `StaffRole.Receptionist`.
 
 Verification actions should be auditable.
 
@@ -655,10 +676,10 @@ Version 1 will be considered functionally complete when:
 - receptionists can verify patient identities and activate eligible accounts;
 - patient verification actions are auditable;
 - unverified patients cannot book or reschedule appointments;
-- verified patients can successfully search for doctors and manage appointments;
+- patients can search for doctors, and verified patients with active accounts can book and reschedule appointments;
 - doctors can manage availability and appointments;
 - receptionists can manage appointments on behalf of verified patients;
-- administrators can manage users, doctors, and specialties;
+- administrators can manage user accounts, doctor and staff profiles, and specialties;
 - conflicting appointment bookings are correctly prevented;
 - the API is covered by meaningful automated tests;
 - the web application consumes the production API;

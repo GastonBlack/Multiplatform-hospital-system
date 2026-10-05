@@ -99,7 +99,9 @@ Two user accounts shall not share the same email address.
 
 ## BR-ACC-002 — User Role
 
-Every user account shall have an assigned system role.
+Every User account shall have exactly one Patient, Doctor, or Staff profile, linked through UserId.
+
+Patient and Doctor authorization roles correspond to their profile types. Receptionist and Administrator are StaffRole values on Staff, not separate profile entities. Each Staff profile shall have exactly one StaffRole.
 
 Version 1 roles are:
 
@@ -134,11 +136,15 @@ A deactivated account shall not be allowed to perform protected operations.
 
 The `PendingVerification` status shall primarily represent patient accounts that have not yet completed the required identity verification process.
 
+These patients shall retain limited access to their account information and verification instructions, without permission to book or reschedule appointments. The exact permission policy remains to be defined.
+
 ---
 
 ## BR-ACC-007 — Account Status and Identity Verification
 
 Account status and patient identity verification shall be treated as separate concepts.
+
+AccountStatus belongs to User. Identity verification attributes belong to Patient.
 
 A previously verified patient may still have an account status such as:
 
@@ -207,6 +213,8 @@ A successfully verified patient shall have sufficient audit information to ident
 - when the verification occurred;
 - which authorized user performed the verification.
 
+These shall be recorded as Patient.IdentityVerifiedAt and Patient.IdentityVerifiedByUserId. Both attributes shall be absent before verification and present after successful verification.
+
 ---
 
 ## BR-VER-004 — Verification Timestamp
@@ -219,11 +227,15 @@ A verification timestamp shall only be recorded when identity verification has b
 
 A verified patient record shall identify the authorized user responsible for the verification.
 
+IdentityVerifiedByUserId shall reference the verifying User, who must have a Staff profile with StaffRole.Receptionist and be authorized at the time of verification.
+
 ---
 
 ## BR-VER-006 — Activation After Verification
 
 A self-registered patient's account may transition from `PendingVerification` to `Active` only after successful identity verification.
+
+Verification shall not automatically reactivate a Suspended or Deactivated account.
 
 ---
 
@@ -245,11 +257,13 @@ A patient's identity verification status shall remain conceptually independent f
 
 For example:
 
-`IdentityVerified = true`
+populated `IdentityVerifiedAt` and `IdentityVerifiedByUserId` attributes
 
 may coexist with:
 
 `AccountStatus = Suspended`
+
+Verification status shall be determined from these attributes rather than a separate persisted boolean.
 
 ---
 
@@ -260,6 +274,8 @@ may coexist with:
 Doctor accounts shall only be created by authorized administrators.
 
 Public doctor registration shall not be supported.
+
+The Doctor profile shall contain UserId, EmployeeNumber, and MedicalLicenseNumber. EmployeeNumber shall identify at most one employee across Doctor and Staff profiles. The persistence enforcement mechanism and MedicalLicenseNumber uniqueness policy remain to be defined.
 
 ---
 
@@ -400,6 +416,8 @@ Available appointment slots shall be calculated using:
 - existing scheduled appointments;
 - applicable scheduling rules.
 
+Slots shall be calculated dynamically and shall not be persisted as separate entities in Version 1. The appointment-duration policy remains to be defined.
+
 ---
 
 # 10. Appointment Rules
@@ -431,6 +449,8 @@ A new appointment shall not be scheduled in the past.
 
 An appointment shall only be scheduled during a valid availability period belonging to the selected doctor.
 
+EndTime shall be later than StartTime. Each Appointment shall reference PatientId, DoctorId, and MedicalSpecialtyId directly, rather than DoctorSpecialtyId. Booking and rescheduling shall validate that the selected doctor is assigned to the selected specialty.
+
 ---
 
 ## BR-APT-005 — Doctor Appointment Conflict
@@ -460,6 +480,8 @@ Version 1 appointments shall support the following states:
 - `Scheduled`
 - `Cancelled`
 - `Completed`
+
+New appointments shall start as Scheduled.
 
 ---
 
@@ -512,6 +534,8 @@ A doctor may only cancel an appointment associated with their own schedule.
 
 An authorized receptionist may cancel an appointment on behalf of a patient.
 
+Cancellation by a patient, doctor, or receptionist shall only apply to Scheduled appointments and shall preserve the appointment record.
+
 ---
 
 ## BR-APT-016 — Rescheduling Eligibility
@@ -529,6 +553,8 @@ This includes:
 - doctor availability;
 - appointment timing;
 - booking permissions;
+- patient identity verification and Active account status;
+- doctor-specialty assignment;
 - scheduling conflicts;
 - concurrency protection.
 
@@ -572,6 +598,8 @@ When an appointment is cancelled, its previous slot may become available for boo
 
 Only users authorized as receptionists shall perform receptionist-specific operations.
 
+These users shall have a Staff profile with StaffRole.Receptionist.
+
 ---
 
 ## BR-REC-002 — Patient Verification
@@ -604,6 +632,8 @@ The receptionist role shall not implicitly grant administrator privileges.
 
 Administrative operations shall only be performed by authorized administrators.
 
+These users shall have a Staff profile with StaffRole.Administrator.
+
 ---
 
 ## BR-ADM-002 — Doctor Management
@@ -612,15 +642,19 @@ Only authorized administrators shall create doctor accounts.
 
 ---
 
-## BR-ADM-003 — Receptionist Management
+## BR-ADM-003 — Staff Management
 
-Only authorized administrators shall create or administratively manage receptionist accounts.
+Only authorized administrators shall create or administratively manage staff accounts for receptionists and administrators.
+
+Each Staff profile shall contain UserId, EmployeeNumber, and exactly one StaffRole. EmployeeNumber shall identify at most one employee across Doctor and Staff profiles. Version 1 shall not introduce a shared Employee entity.
 
 ---
 
 ## BR-ADM-004 — Account Status Management
 
 Authorized administrators may manage eligible account statuses according to system rules.
+
+Administrative status changes shall respect patient verification requirements. The complete status-transition policy remains to be defined.
 
 ---
 

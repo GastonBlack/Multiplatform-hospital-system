@@ -89,6 +89,10 @@ Sensitive token values shall not be unnecessarily exposed or logged.
 
 Protected resources shall enforce authorization on the backend.
 
+Authorization shall be consistent with the User's single Patient, Doctor, or Staff profile and, for Staff, its StaffRole. AccountStatus shall be evaluated independently of patient identity verification.
+
+PendingVerification accounts shall receive only permitted access, including account information and verification instructions. Suspended and Deactivated accounts shall not perform protected operations.
+
 Client-side UI restrictions shall not be considered a security boundary.
 
 ---
@@ -156,9 +160,9 @@ Production API responses shall not expose internal implementation details such a
 
 ## NFR-SEC-011 — Identity Verification Authorization
 
-Patient identity verification operations shall only be available to authorized hospital staff.
+Patient identity verification operations shall only be available to authorized Users with a Staff profile and StaffRole.Receptionist.
 
-Verification operations shall generate sufficient audit information to determine who performed the action and when.
+Verification operations shall reliably persist Patient.IdentityVerifiedAt and Patient.IdentityVerifiedByUserId together to determine who performed the action and when. Account suspension or deactivation shall not remove this verification record.
 
 ---
 
@@ -254,3 +258,4 @@ Load Balancer
     +-- API Instance 2
     |
     +-- API Instance N
+```

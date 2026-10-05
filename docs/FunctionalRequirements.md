@@ -86,7 +86,9 @@ The system shall allow authenticated users to terminate their active session by 
 
 ## FR-AUTH-008 — Role Assignment
 
-Every user account shall have an assigned system role.
+Every User account shall have exactly one Patient, Doctor, or Staff profile, linked through UserId.
+
+Patient and Doctor authorization roles correspond to their profile types. A Staff profile shall have exactly one StaffRole: Receptionist or Administrator. These Staff roles shall not be modeled as separate profile entities.
 
 Supported roles for Version 1 are:
 
@@ -105,14 +107,16 @@ The system shall restrict protected operations according to the authenticated us
 
 ## FR-AUTH-010 — Account Status
 
-The system shall maintain an account status for every user.
+The system shall maintain AccountStatus on User, independently of patient identity verification.
 
-Supported account statuses shall include at least:
+Supported account statuses in Version 1 shall be:
 
 - `PendingVerification`
 - `Active`
 - `Suspended`
 - `Deactivated`
+
+PendingVerification patients shall retain limited access to their own account information and verification instructions. The exact permission policy remains to be defined.
 
 ---
 
@@ -162,6 +166,8 @@ This shall include at least:
 - date of birth;
 - phone number.
 
+FirstName, LastName, Email, and PasswordHash belong to User. NationalIdentificationNumber, DateOfBirth, and PhoneNumber belong to the Patient profile.
+
 ---
 
 ## FR-PAT-004 — Unique Email
@@ -192,7 +198,7 @@ Information considered sensitive or related to verified identity may require hos
 
 ## FR-PAT-008 — Verification Status
 
-A patient shall be able to view whether their account is awaiting identity verification or has already been verified.
+A patient shall be able to view their identity verification status separately from their User account status.
 
 ---
 
@@ -232,15 +238,18 @@ A receptionist shall be able to locate a patient requiring verification using ap
 
 When a patient is successfully verified, the system shall record:
 
-- that the identity was verified;
-- the date and time of verification;
-- the authorized user who performed the verification.
+- Patient.IdentityVerifiedAt, containing the date and time of verification;
+- Patient.IdentityVerifiedByUserId, identifying the authorized receptionist's User account.
+
+Both attributes shall be absent before verification and present after successful verification. Verification status shall be determined from these attributes rather than a separate persisted boolean.
 
 ---
 
 ## FR-VER-005 — Account Activation
 
-After successful identity verification, the system shall allow the patient's account to become `Active`.
+After successful identity verification, the system shall allow an eligible patient's User account to transition from `PendingVerification` to `Active`.
+
+Verification shall not automatically reactivate a `Suspended` or `Deactivated` account.
 
 ---
 
@@ -280,7 +289,9 @@ Doctors shall not be able to register themselves publicly.
 
 ## FR-DOC-002 — Doctor Profile
 
-The system shall maintain profile information for every doctor.
+The system shall maintain a Doctor profile linked to User through UserId, including EmployeeNumber and MedicalLicenseNumber.
+
+EmployeeNumber shall be unique across Doctor and Staff profiles. Its persistence enforcement and the MedicalLicenseNumber uniqueness policy remain to be defined.
 
 ---
 
@@ -404,15 +415,19 @@ An administrator shall be able to create and manage doctor accounts.
 
 ---
 
-## FR-ADM-002 — Receptionist Account Management
+## FR-ADM-002 — Staff Account Management
 
-An administrator shall be able to create and manage receptionist accounts.
+An administrator shall be able to create and manage User accounts with Staff profiles for receptionists and administrators.
+
+Each Staff profile shall contain UserId, EmployeeNumber, and exactly one StaffRole. EmployeeNumber shall be unique across Doctor and Staff profiles.
 
 ---
 
 ## FR-ADM-003 — User Status Management
 
 An administrator shall be able to change the status of eligible user accounts.
+
+Administrative status changes shall respect patient verification requirements. The complete status-transition policy remains to be defined.
 
 ---
 
@@ -502,6 +517,8 @@ A doctor shall be able to define periods during which they are available for app
 
 A doctor shall be able to modify future availability periods.
 
+The system shall reject modifications that invalidate existing Scheduled appointments.
+
 ---
 
 ## FR-AVL-003 — Availability Removal
@@ -534,14 +551,16 @@ The system shall calculate bookable appointment slots based on:
 
 - doctor availability;
 - appointment duration;
-- existing appointments;
+- existing Scheduled appointments;
 - applicable scheduling rules.
+
+Slots shall be calculated dynamically rather than persisted as separate entities in Version 1. The appointment-duration policy remains to be defined.
 
 ---
 
 ## FR-AVL-008 — Occupied Slots
 
-A time slot containing an active appointment shall not be returned as available.
+A time interval occupied by a Scheduled appointment shall not be returned as available for another appointment with the same doctor.
 
 ---
 
@@ -555,13 +574,15 @@ Patients and authorized hospital staff shall be able to retrieve available appoi
 
 ## FR-APT-001 — Appointment Creation
 
-The system shall allow a verified patient to book an available appointment.
+The system shall allow an identity-verified patient with an Active User account to book an available appointment.
+
+Each appointment shall reference PatientId, DoctorId, and MedicalSpecialtyId directly, rather than DoctorSpecialtyId. The system shall validate that the selected doctor is assigned to the selected specialty and that EndTime is later than StartTime.
 
 ---
 
 ## FR-APT-002 — Appointment Creation by Receptionist
 
-The system shall allow a receptionist to create an appointment on behalf of a verified patient.
+The system shall allow a receptionist to create an appointment on behalf of an identity-verified patient with an Active User account.
 
 ---
 
@@ -579,7 +600,7 @@ The system shall reject attempts to create appointments in the past.
 
 ## FR-APT-005 — Doctor Scheduling Conflict
 
-The system shall prevent a doctor from having multiple active appointments that overlap in time.
+The system shall prevent a doctor from having multiple Scheduled appointments that overlap in time.
 
 ---
 
@@ -593,11 +614,13 @@ When multiple users attempt to book the same appointment slot concurrently, the 
 
 The system shall maintain a status for each appointment.
 
-Version 1 shall support at least:
+Version 1 shall support:
 
 - `Scheduled`
 - `Cancelled`
 - `Completed`
+
+New appointments shall start as Scheduled. Only Scheduled → Cancelled and Scheduled → Completed transitions shall be allowed; Cancelled and Completed shall be terminal states.
 
 ---
 
@@ -621,25 +644,27 @@ A doctor shall be able to cancel one of their future scheduled appointments when
 
 ## FR-APT-011 — Cancelled Appointment Slot
 
-When an appointment is cancelled, its time slot shall become available again when the doctor's availability still permits that slot.
+When an appointment is cancelled, its time slot shall become available again if it remains in the future, is covered by valid doctor availability, and satisfies scheduling rules.
+
+Cancellation shall preserve the appointment record.
 
 ---
 
 ## FR-APT-012 — Appointment Rescheduling
 
-A verified patient shall be able to reschedule a future scheduled appointment to another available time slot.
+An identity-verified patient with an Active User account shall be able to reschedule a future Scheduled appointment to another available time slot.
 
 ---
 
 ## FR-APT-013 — Receptionist Rescheduling
 
-A receptionist shall be able to reschedule a future scheduled appointment on behalf of a verified patient.
+A receptionist shall be able to reschedule a future Scheduled appointment on behalf of an identity-verified patient with an Active User account.
 
 ---
 
 ## FR-APT-014 — Rescheduling Validation
 
-A rescheduled appointment shall be subject to the same availability and conflict rules as a newly created appointment.
+A rescheduled appointment shall satisfy all booking rules, including patient verification and account status, doctor-specialty assignment, timing, availability, conflicts, and concurrency protection.
 
 ---
 
@@ -647,7 +672,7 @@ A rescheduled appointment shall be subject to the same availability and conflict
 
 The system shall prevent an appointment from being left in an invalid state if a rescheduling operation fails.
 
-The existing appointment shall remain valid unless the new appointment time is successfully reserved.
+The existing appointment shall remain unchanged if the new appointment time cannot be successfully reserved.
 
 ---
 
@@ -785,7 +810,7 @@ The functional scope of Version 1 shall be considered complete when the system s
 ### Administration Workflow
 
 1. An administrator authenticates.
-2. The administrator creates doctor and receptionist accounts.
+2. The administrator creates doctor accounts and staff accounts for receptionists and administrators.
 3. The administrator creates medical specialties.
 4. The administrator assigns specialties to doctors.
 5. The administrator manages account statuses when necessary.
