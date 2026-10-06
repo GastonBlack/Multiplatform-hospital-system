@@ -259,7 +259,9 @@ The system will:
 
 Availability periods are persisted; bookable slots are calculated dynamically and are not persisted as separate entities in Version 1.
 
-Version 1 uses 30-minute appointments Monday through Friday within 09:00–18:00 in America/Montevideo, starting on the half-hour grid from 09:00 through 17:30. Saturday and Sunday are not bookable. A doctor available for the entire window has at most 18 potential daily slots before existing bookings are excluded. Holiday rules remain pending.
+Version 1 uses 30-minute appointments Monday through Friday within 09:00–18:00 in America/Montevideo, starting on the half-hour grid from 09:00 through 17:30. Saturday and Sunday are not bookable. A doctor available for the entire window has at most 18 potential daily slots before existing bookings are excluded.
+
+There is no holiday calendar or automatic holiday exclusion in Version 1. Doctors omit availability on concrete dates when they will not attend. If appointments already exist for a later absence, reception cancels those affected with a patient-visible reason and in-app guidance before availability is removed or changed.
 
 ---
 

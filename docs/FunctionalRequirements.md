@@ -582,7 +582,9 @@ Patients and authorized hospital staff shall be able to retrieve available appoi
 
 The system shall restrict availability to periods within 09:00–18:00 on one America/Montevideo local date, Monday through Friday. Slot calculation shall return only complete half-hour grid intervals that fit within valid availability and are not occupied by Scheduled appointments. Saturday and Sunday shall not be bookable.
 
-Holiday rules remain to be defined; the operating window shall not imply full-day availability for every doctor.
+Version 1 shall not introduce a holiday calendar or automatic holiday exclusions. Doctors shall create availability for concrete dates and omit dates when they will not attend. Dates without valid availability shall return no bookable slots; a weekday holiday with valid availability shall remain bookable. The operating window shall not imply full-day availability for every doctor.
+
+If a later absence affects existing future Scheduled appointments, reception shall cancel the affected appointments with a patient-visible reason and in-app guidance before removing or changing availability that would invalidate them, according to [ADR-0009](adr/0009-appointment-time-policy.md).
 
 ---
 

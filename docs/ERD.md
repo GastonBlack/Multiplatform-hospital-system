@@ -204,6 +204,8 @@ No composite foreign key from Appointment to DoctorSpecialty is proposed: removi
 
 DoctorAvailability stores concrete availability periods belonging to a Doctor. Recurring schedule templates are not introduced by this model.
 
+No holiday table or calendar is introduced in Version 1. Non-working dates are represented by absent doctor availability; a weekday holiday with valid availability is not automatically excluded. Existing Scheduled appointments must be handled through valid cancellation workflows before a later absence permits removal of their covering availability.
+
 StartTime and EndTime describe the full period. Available slots are calculated dynamically using the applicable duration and existing Scheduled appointments.
 
 There is no AppointmentSlot table or required Appointment-to-DoctorAvailability foreign key. The application must validate that a booking or rescheduling interval fits entirely within a valid availability period.
@@ -308,7 +310,6 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 - Email and national-identification normalization policies.
 - Complete administrative AccountStatus transition policy.
 - Exact permissions available to PendingVerification accounts.
-- Holiday rules.
 - Effect of specialty assignment removal on existing appointments.
 - Concurrency protocol for simultaneous rescheduling, cancellation, or completion of the same appointment.
 - Transaction and locking strategy for validation across tables.

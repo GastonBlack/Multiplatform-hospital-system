@@ -426,7 +426,9 @@ Slots shall be calculated dynamically and shall not be persisted as separate ent
 
 Availability periods shall fit within 09:00–18:00 on one America/Montevideo local date, Monday through Friday. Only complete grid-aligned slots within doctor availability may be offered. Saturday and Sunday shall not be bookable.
 
-The window allows at most 18 slots per doctor on a fully available operating day before bookings are excluded. It shall not imply that the doctor works the full window. Holiday rules remain pending.
+The window allows at most 18 slots per doctor on a fully available operating day before bookings are excluded. It shall not imply that the doctor works the full window.
+
+Version 1 shall not automatically exclude holidays or maintain a holiday calendar. Doctors shall omit availability on dates when they will not attend. A weekday holiday with valid availability shall remain bookable; a date without availability shall have no bookable slots. If an absence affects existing appointments, reception shall cancel affected future Scheduled appointments with a patient-visible reason and in-app guidance before availability is removed or changed under BR-AVL-006.
 
 ---
 

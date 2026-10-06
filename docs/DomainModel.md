@@ -366,7 +366,9 @@ Version 1 appointments last exactly 30 minutes. Slots follow the hospital-local 
 
 Availability periods must fit within 09:00–18:00 on one hospital-local date, Monday through Friday. Saturday and Sunday are not bookable. A continuous full-day period offers at most 18 slots per doctor before bookings are excluded. Shorter periods and breaks reduce this capacity; only complete grid-aligned slots inside availability may be returned.
 
-Weekdays are evaluated in America/Montevideo. Holiday rules remain pending. See [ADR-0009](adr/0009-appointment-time-policy.md).
+Weekdays are evaluated in America/Montevideo. Version 1 has no holiday calendar or automatic holiday exclusion. Doctors omit availability on concrete dates when they will not attend; dates without availability have no bookable slots. A weekday holiday with valid availability remains bookable.
+
+If existing appointments are affected by a later absence, reception cancels them through the normal workflow with a patient-visible reason and in-app guidance before availability is removed or changed. See [ADR-0009](adr/0009-appointment-time-policy.md).
 
 ---
 
@@ -514,7 +516,6 @@ The following decisions must be resolved in subsequent design work:
 - the uniqueness policy for MedicalLicenseNumber;
 - the complete administrative AccountStatus transition policy;
 - the exact permissions available to PendingVerification accounts;
-- holiday rules;
 - the persistence representation of doctor-specialty assignments;
 - how specialty assignment removal affects existing appointments;
 - the concurrency protocol for simultaneous changes to the same appointment;

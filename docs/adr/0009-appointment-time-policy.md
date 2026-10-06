@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Version 1. Holiday rules remain pending.
+Accepted for Version 1, including availability-based handling of non-working dates without a holiday calendar.
 
 ## Context
 
@@ -26,7 +26,11 @@ Retain the named hospital time zone separately from stored instants; timestamptz
 
 A doctor available continuously from 09:00 to 18:00 has 18 potential slots before existing appointments are excluded. This is a capacity ceiling, not an automatically generated daily schedule. Shorter periods, breaks, and occupied intervals reduce availability. For periods with boundaries between grid points, return only complete grid-aligned slots that fit within the period.
 
-Evaluate the weekday in America/Montevideo, not from the UTC date or the client's time zone. Holiday rules must still be decided before implementing the scheduling calendar; this decision does not introduce a holiday calendar.
+Evaluate the weekday in America/Montevideo, not from the UTC date or the client's time zone.
+
+Version 1 does not maintain a holiday calendar, holiday table, or automatic holiday exclusion. Doctors create availability for concrete dates and omit periods on dates when they will not attend. No availability means no bookable slots. A weekday holiday is still bookable if a doctor has valid availability; the system does not infer holiday status.
+
+If availability has already produced appointments and the doctor will no longer attend, reception reviews and cancels affected future Scheduled appointments through the normal workflow, recording a patient-visible reason and the ADR-0011 in-app guidance. Availability may only be removed or changed after affected Scheduled appointments are handled; removing availability must not silently cancel or invalidate them.
 
 ## Alternatives Considered
 
@@ -34,6 +38,7 @@ Evaluate the weekday in America/Montevideo, not from the UTC date or the client'
 - Arbitrary appointment start times: allows greater flexibility, but does not match the agreed half-hour schedule.
 - Server-local time or offset-free timestamps: can produce different interpretations across clients and deployments.
 - Persist every daily slot: adds synchronization work without changing the time rules and conflicts with ADR-0004.
+- A centralized holiday calendar: provides automatic exclusions, but adds calendar administration and another source of scheduling rules beyond the initial need.
 
 ## Consequences
 
@@ -42,14 +47,16 @@ Evaluate the weekday in America/Montevideo, not from the UTC date or the client'
 - Backend validation must reject off-grid starts, invalid duration, and intervals outside local hospital hours.
 - Tests must cover 09:00, 17:30–18:00, rejection of an 18:00 start, off-grid starts, partial availability, occupied slots, Monday/Friday acceptance, Saturday/Sunday rejection, and equivalent timestamps expressed with different offsets.
 - Duration customization and extended opening hours would require a revised policy.
+- Doctors must omit non-working dates when creating availability; the system does not automatically recognize holidays. Tests must cover dates without availability and rejection of availability removal that invalidates Scheduled appointments.
 
 ## Revisit When
 
-Different specialties require different durations, hospital hours change, or another hospital/time zone is introduced.
+Different specialties require different durations, hospital hours change, another hospital/time zone is introduced, or centralized holiday exclusions become necessary.
 
 ## References
 
 - [Dynamic Appointment Slots](0004-dynamic-appointment-slots.md)
 - [Domain Model](../DomainModel.md)
 - [ERD](../ERD.md)
+- [Receptionist Review and In-App Cancellation Notices](0011-service-interruption-cancellations.md)
 - [PostgreSQL date/time types](https://www.postgresql.org/docs/current/datatype-datetime.html)

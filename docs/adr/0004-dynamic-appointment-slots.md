@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Version 1. Appointment duration, hospital hours, and operating weekdays are defined in ADR-0009; holiday rules remain pending.
+Accepted for Version 1. Appointment duration, hospital hours, operating weekdays, and availability-based handling of non-working dates are defined in ADR-0009.
 
 ## Context
 
@@ -30,7 +30,7 @@ Booking and rescheduling must validate the selected interval again against autho
 - Availability edits do not require regenerating a separate slot inventory.
 - Slot reads must query relevant periods and appointments efficiently.
 - Two clients may see the same slot; persistence must allow at most one conflicting booking to succeed.
-- Slot calculation uses the 30-minute half-hour grid and Monday–Friday America/Montevideo operating window defined in [ADR-0009](0009-appointment-time-policy.md). Holiday rules must still be defined before implementation.
+- Slot calculation uses the 30-minute half-hour grid and Monday–Friday America/Montevideo operating window defined in [ADR-0009](0009-appointment-time-policy.md). Non-working dates are handled by omitting availability; no separate holiday calendar is introduced.
 
 ## Revisit When
 
