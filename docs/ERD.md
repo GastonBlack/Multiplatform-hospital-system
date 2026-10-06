@@ -317,7 +317,7 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 
 The diagram is complete for the current domain entities. These open decisions must be resolved before treating it as a production-ready schema.
 
-Authentication infrastructure, including refresh-token persistence, is outside this scheduling ERD and will be designed separately.
+AuthenticationSession and RefreshToken persistence is defined separately in [AuthenticationModel.md](AuthenticationModel.md) and [ADR-0012](adr/0012-authentication-sessions.md), outside this scheduling ERD.
 
 ---
 

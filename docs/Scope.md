@@ -178,6 +178,10 @@ Version 1 will include the following functionality.
 - Protected API endpoints.
 - Authentication support for web and mobile clients.
 
+Each login creates an independent session, allowing web and mobile sessions for the same User. Access JWTs last at most 15 minutes; sessions expire absolutely 7 days after login. Refresh tokens rotate without extending session expiry.
+
+Protected requests check current session and account/profile authorization against PostgreSQL. Logout revokes the current session; suspension or deactivation revokes the User's sessions and reactivation requires a new login. See [ADR-0012](adr/0012-authentication-sessions.md).
+
 User accounts may have states such as:
 
 - `PendingVerification`

@@ -157,6 +157,16 @@ Identity verification alone shall therefore not imply that the account is curren
 
 ---
 
+## BR-ACC-008 — Authentication Session Lifecycle
+
+Each login shall create an independent session with an absolute 7-day expiry. Access JWTs shall expire within 15 minutes and no later than that session deadline. Refresh rotation shall not extend the session.
+
+Protected requests shall validate JWT identity, current session ownership/state, and current account/profile permissions against PostgreSQL. Logout shall revoke only the current session; suspension or deactivation shall revoke the User's sessions atomically with the account-status change. Reactivation shall require new login rather than restore revoked sessions.
+
+Successful refresh shall atomically consume the previous token and create its replacement. Reuse of a consumed token shall revoke its session, with revocation committed despite the rejected request. Unknown tokens shall not revoke unrelated sessions. See [ADR-0012](adr/0012-authentication-sessions.md).
+
+---
+
 # 5. Patient Rules
 
 ## BR-PAT-001 — Self-Registration Status

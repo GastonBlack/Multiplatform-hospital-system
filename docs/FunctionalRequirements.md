@@ -56,6 +56,8 @@ The system shall reject authentication attempts when the supplied credentials ar
 
 The system shall issue an access token after successful authentication.
 
+The access token shall be a signed JWT with a maximum 15-minute lifetime, capped by session expiry. Validated sub and sid claims shall identify User.Id and the authentication session respectively.
+
 ---
 
 ## FR-AUTH-004 — Refresh Token
@@ -76,11 +78,13 @@ The system shall rotate refresh tokens when they are successfully used.
 
 The previously used refresh token shall no longer be valid.
 
+Rotation shall atomically consume the previous token and persist its replacement within the same session, without extending the original session expiry. Reuse of a consumed token shall revoke that session; an unknown token shall be rejected without revoking an unrelated session.
+
 ---
 
 ## FR-AUTH-007 — Logout
 
-The system shall allow authenticated users to terminate their active session by revoking the associated refresh token.
+The system shall allow authenticated users to terminate their current session by revoking the persistent authentication session and removing its client credentials. Subsequent protected requests shall reject that session's access and refresh tokens. Other independent sessions shall remain unaffected.
 
 ---
 
@@ -126,17 +130,31 @@ PendingVerification patients shall retain limited access to their own account in
 
 The system shall prevent suspended users from performing protected operations.
 
+Suspension shall revoke the User's sessions atomically with the AccountStatus change. Reactivation shall require a new login.
+
 ---
 
 ## FR-AUTH-012 — Deactivated Accounts
 
 The system shall prevent deactivated users from performing protected operations.
 
+Deactivation shall revoke the User's sessions atomically with the AccountStatus change. Reactivation shall require a new login.
+
 ---
 
 ## FR-AUTH-013 — Current User Information
 
 The system shall allow an authenticated user to retrieve their own basic account and profile information.
+
+---
+
+## FR-AUTH-014 — Session Lifetime and Current Authorization
+
+Each successful login shall create an independent session with an absolute 7-day lifetime, permitting separate web and mobile sessions for the same User. Token rotation shall not extend that deadline.
+
+Every authenticated protected request shall validate the JWT and the current session's ownership, expiry, and revocation, plus current account/profile permissions in PostgreSQL. A valid JWT shall not override account restrictions, resource ownership, or patient identity-verification requirements.
+
+Refresh requests shall coordinate session locking, eligibility validation, token consumption, replacement, and reuse revocation as defined in [ADR-0012](adr/0012-authentication-sessions.md).
 
 ---
 

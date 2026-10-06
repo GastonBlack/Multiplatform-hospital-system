@@ -109,7 +109,7 @@ The system distinguishes four authorization roles:
 - Receptionist, associated with StaffRole.Receptionist;
 - Administrator, associated with StaffRole.Administrator.
 
-The mechanism used to represent these permissions in authentication tokens is an implementation decision.
+Validated JWTs identify User.Id through sub and the authentication session through sid. Permissions are evaluated from current account/profile data rather than a token's role snapshot, as defined in [ADR-0012](adr/0012-authentication-sessions.md).
 
 ---
 
@@ -550,7 +550,7 @@ It does not include:
 - emergency department workflows;
 - multiple hospital organizations.
 
-Authentication infrastructure, including refresh-token persistence, will be designed separately from the core scheduling domain.
+AuthenticationSession and RefreshToken persistence is documented in [AuthenticationModel.md](AuthenticationModel.md), separately from the core scheduling domain.
 
 ---
 

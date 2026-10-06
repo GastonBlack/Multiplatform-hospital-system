@@ -210,9 +210,13 @@ Authorization distinguishes Patient, Doctor, Receptionist, and Administrator. Th
 
 Protected operations must account for current account status. PendingVerification patients retain permitted account and verification-information access; booking and rescheduling require verified identity and an Active account. Suspended and Deactivated accounts cannot perform protected operations.
 
-Role claims in a JWT do not replace current account-state and business-eligibility checks. The exact policy for validating current permissions and handling existing tokens after account or role changes remains to be designed.
+JWT access tokens have a maximum 15-minute lifetime and identify User.Id through sub and a persistent authentication session through sid. Each login creates an independent session with an absolute 7-day expiry; refresh does not extend that deadline.
 
-Refresh-token records are persistent authentication infrastructure, separate from the scheduling entities. Their schema, token lifetimes, storage, and client transport will be specified before implementing authentication.
+Every protected request validates the JWT and reads session ownership/state and current account/profile permissions from PostgreSQL. Role claims do not replace current AccountStatus, ProfileType, StaffRole, ownership, or patient eligibility checks.
+
+Refresh tokens are opaque random credentials, stored only as SHA-256 hashes and rotated atomically while locking the session row. Reuse of a consumed token revokes its session. Logout revokes the current session; suspension/deactivation atomically revokes the User's sessions, with new login required after reactivation.
+
+These records belong to Authentication and are defined in [AuthenticationModel.md](AuthenticationModel.md) and [ADR-0012](adr/0012-authentication-sessions.md). Web refresh-cookie storage remains proposed pending deployment/CSRF details; signing-key design and exact PendingVerification permissions remain to be finalized.
 
 ---
 

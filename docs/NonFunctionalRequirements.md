@@ -70,6 +70,8 @@ Authentication tokens shall have limited validity periods.
 
 Access tokens shall be short-lived compared to refresh tokens.
 
+Access JWTs shall last at most 15 minutes, capped by the session expiry. Each independent login session shall expire absolutely 7 days after creation; refresh rotation shall not extend this deadline. JWT validation shall verify trusted signatures, allowed algorithms, issuer, audience, and expiry, as defined in [ADR-0012](adr/0012-authentication-sessions.md).
+
 ---
 
 ## NFR-SEC-004 — Refresh Token Storage
@@ -83,6 +85,8 @@ Refresh tokens shall be stored and managed in a way that allows:
 
 Sensitive token values shall not be unnecessarily exposed or logged.
 
+Refresh tokens shall be generated from 32 cryptographically random bytes. PostgreSQL shall persist unique SHA-256 token hashes rather than raw credentials, retaining consumed versions until session expiry for reuse detection. Rotation and reuse revocation shall be transactional and coordinated by locking the session row.
+
 ---
 
 ## NFR-SEC-005 — Authorization
@@ -94,6 +98,8 @@ Authorization shall be consistent with the User's single Patient, Doctor, or Sta
 PendingVerification accounts shall receive only permitted access, including account information and verification instructions. Suspended and Deactivated accounts shall not perform protected operations.
 
 Client-side UI restrictions shall not be considered a security boundary.
+
+Protected requests shall verify current session ownership/state and account/profile authorization in PostgreSQL, independently of stale JWT role information. Logout revokes the current session; account suspension/deactivation revokes all of the User's sessions atomically with the status change. This policy requires shared database authorization reads across API instances.
 
 ---
 
