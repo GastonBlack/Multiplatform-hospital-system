@@ -418,7 +418,15 @@ Available appointment slots shall be calculated using:
 - existing scheduled appointments;
 - applicable scheduling rules.
 
-Slots shall be calculated dynamically and shall not be persisted as separate entities in Version 1. The appointment-duration policy remains to be defined.
+Slots shall be calculated dynamically and shall not be persisted as separate entities in Version 1. Each slot shall last 30 minutes and follow the hospital-local half-hour grid defined in ADR-0009.
+
+---
+
+## BR-AVL-010 — Hospital Operating Window
+
+Availability periods shall fit within 09:00–18:00 on one America/Montevideo local date. Only complete grid-aligned slots within doctor availability may be offered.
+
+The window allows at most 18 slots per doctor on a fully available day before bookings are excluded. It shall not imply that the doctor works the full window or that the hospital opens every day. Operating weekdays and holiday rules remain pending.
 
 ---
 
@@ -591,6 +599,16 @@ When an appointment is cancelled, its previous slot may become available for boo
 - the slot remains in the future;
 - it is still covered by valid doctor availability;
 - no other scheduling rule prevents booking.
+
+---
+
+## BR-APT-022 — Appointment Duration and Time Policy
+
+Each appointment shall last exactly 30 minutes. Booking and rescheduling shall use starts on the half-hour grid anchored at 09:00 in America/Montevideo, with no seconds or fractional seconds.
+
+The first possible start is 09:00; the last is 17:30, ending at 18:00. The interval shall fit within the operating window and valid doctor availability on the same local date. An 18:00 start is invalid.
+
+Timestamp instants shall be interpreted consistently regardless of the client, API host, or database session's default time zone. See [ADR-0009](adr/0009-appointment-time-policy.md).
 
 ---
 

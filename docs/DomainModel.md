@@ -362,7 +362,11 @@ An occupied interval is excluded from the available results.
 
 Available slots are not persisted as separate entities in Version 1.
 
-The appointment-duration policy remains to be defined.
+Version 1 appointments last exactly 30 minutes. Slots follow the hospital-local half-hour grid from 09:00 through 17:30, with the last slot ending at 18:00. Use America/Montevideo for hospital scheduling dates and hours.
+
+Availability periods must fit within 09:00–18:00 on one hospital-local date. A continuous full-day period offers at most 18 slots per doctor before bookings are excluded. Shorter periods and breaks reduce this capacity; only complete grid-aligned slots inside availability may be returned.
+
+Operating weekdays and holiday rules remain pending. See [ADR-0009](adr/0009-appointment-time-policy.md).
 
 ---
 
@@ -404,6 +408,7 @@ The application validates that the doctor is assigned to the selected specialty 
 - The patient's account must be Active.
 - EndTime must be later than StartTime.
 - The appointment cannot start in the past.
+- The appointment must last exactly 30 minutes, start on the hospital's half-hour grid, and fit within 09:00–18:00 on one America/Montevideo local date.
 - The appointment must fit completely within valid doctor availability.
 - Scheduled appointments for the same doctor cannot overlap.
 - These rules also apply when a receptionist books on behalf of a patient.
@@ -497,8 +502,7 @@ The following decisions must be resolved in subsequent design work:
 - the uniqueness policy for MedicalLicenseNumber;
 - the complete administrative AccountStatus transition policy;
 - the exact permissions available to PendingVerification accounts;
-- the appointment-duration policy;
-- the time-zone and time-representation policy;
+- operating weekdays and holiday rules;
 - the persistence representation of doctor-specialty assignments;
 - how specialty deactivation or assignment removal affects existing appointments;
 - how doctor suspension or deactivation affects availability and existing appointments;

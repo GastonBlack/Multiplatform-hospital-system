@@ -558,7 +558,7 @@ The system shall calculate bookable appointment slots based on:
 - existing Scheduled appointments;
 - applicable scheduling rules.
 
-Slots shall be calculated dynamically rather than persisted as separate entities in Version 1. The appointment-duration policy remains to be defined.
+Slots shall be calculated dynamically rather than persisted as separate entities in Version 1, using the 30-minute duration and half-hour hospital grid defined in ADR-0009.
 
 ---
 
@@ -571,6 +571,14 @@ A time interval occupied by a Scheduled appointment shall not be returned as ava
 ## FR-AVL-009 — Availability Retrieval
 
 Patients and authorized hospital staff shall be able to retrieve available appointment slots for a doctor.
+
+---
+
+## FR-AVL-010 — Hospital Operating Window
+
+The system shall restrict availability to periods within 09:00–18:00 on one America/Montevideo local date. Slot calculation shall return only complete half-hour grid intervals that fit within valid availability and are not occupied by Scheduled appointments.
+
+Operating weekdays and holiday rules remain to be defined; the time window shall not imply daily opening or full-day availability for every doctor.
 
 ---
 
@@ -725,6 +733,14 @@ The system shall allow historical appointments to be retrieved separately from u
 ## FR-APT-023 — Appointment Details
 
 The system shall allow authorized users to retrieve the details of a specific appointment.
+
+---
+
+## FR-APT-024 — Appointment Duration and Time Policy
+
+Booking and rescheduling shall require exactly 30-minute appointments starting on the hospital-local half-hour grid between 09:00 and 17:30 and ending no later than 18:00 on the same local date.
+
+The system shall interpret hospital dates and hours in America/Montevideo and exchange timestamp instants as ISO 8601 values with UTC or an explicit offset, according to [ADR-0009](adr/0009-appointment-time-policy.md).
 
 ---
 

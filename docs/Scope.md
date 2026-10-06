@@ -257,7 +257,9 @@ The system will:
 - exclude already booked times;
 - prevent bookings outside a doctor's availability.
 
-Availability periods are persisted; bookable slots are calculated dynamically and are not persisted as separate entities in Version 1. The appointment-duration policy remains to be defined.
+Availability periods are persisted; bookable slots are calculated dynamically and are not persisted as separate entities in Version 1.
+
+Version 1 uses 30-minute appointments within 09:00–18:00 in America/Montevideo, starting on the half-hour grid from 09:00 through 17:30. A doctor available for the entire window has at most 18 potential daily slots before existing bookings are excluded. Operating weekdays and holiday rules remain pending.
 
 ---
 
@@ -638,7 +640,7 @@ The initial project assumes that:
 - when a patient is registered in person by a receptionist and their identity is verified during registration, the account may be activated immediately;
 - identity verification actions should record when verification occurred and which authorized user performed it;
 - doctor availability is configured within the platform;
-- appointments have predetermined durations or duration rules defined by the system;
+- appointments last exactly 30 minutes and fit within the 09:00–18:00 America/Montevideo operating window and doctor availability;
 - all clients communicate through the backend API;
 - PostgreSQL is the authoritative persistent data store;
 - Redis is not the authoritative source for critical business information;

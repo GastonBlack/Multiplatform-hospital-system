@@ -242,6 +242,7 @@ Rescheduling must preserve the original appointment if the replacement interval 
 | DoctorAvailability | DoctorId foreign key and EndTime greater than StartTime |
 | Appointment | PatientId, DoctorId, and MedicalSpecialtyId foreign keys |
 | Appointment | EndTime greater than StartTime |
+| Appointment | EndTime minus StartTime equals exactly 30 minutes |
 | Appointment | Status restricted to Scheduled, Cancelled, or Completed; initial status Scheduled |
 
 Foreign keys should restrict deletion of referenced rows rather than cascade-delete appointment history or verification actors. Account deactivation is a status change, not deletion.
@@ -281,7 +282,9 @@ Redis is not the authority for these validations.
 
 Identification, employee, and license numbers are text because they are identifiers rather than quantities and may contain leading zeros or letters.
 
-timestamptz represents an instant; it does not preserve an original named time zone. Clients must submit unambiguous instants. The hospital's display time zone and scheduling duration policy remain to be selected.
+timestamptz represents an instant; it does not preserve an original named time zone. API timestamps use ISO 8601 with UTC or an explicit offset. Hospital-local dates and hours are interpreted in America/Montevideo independently of server or database session defaults.
+
+Appointments last exactly 30 minutes and follow a half-hour grid from 09:00 through 17:30, ending by 18:00. Availability must fit within that local operating window on a single date. Backend validation applies these rules when creating availability, booking, or rescheduling; database interval constraints do not replace local-hour validation. See [ADR-0009](adr/0009-appointment-time-policy.md).
 
 PostgreSQL storage names and Entity Framework Core mappings will be defined during implementation; the diagram uses domain names for readability.
 
@@ -295,7 +298,7 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 - Email and national-identification normalization policies.
 - Complete administrative AccountStatus transition policy.
 - Exact permissions available to PendingVerification accounts.
-- Appointment duration and hospital display time zone.
+- Operating weekdays and holiday rules.
 - Effect of specialty deactivation, assignment removal, and doctor suspension on existing appointments.
 - Rescheduling persistence and history policy.
 - Transaction and locking strategy for validation across tables.
