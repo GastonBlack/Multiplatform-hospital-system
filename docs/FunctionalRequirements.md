@@ -686,6 +686,10 @@ The system shall prevent an appointment from being left in an invalid state if a
 
 The existing appointment shall remain unchanged if the new appointment time cannot be successfully reserved.
 
+Successful rescheduling shall update StartTime, EndTime, and UpdatedAt on the existing Appointment while preserving Id, PatientId, DoctorId, MedicalSpecialtyId, CreatedAt, and Scheduled status. It shall not cancel the appointment or create a replacement row.
+
+The system shall exclude the appointment itself from its conflict check and coordinate simultaneous changes to the same appointment, according to [ADR-0010](adr/0010-rescheduled-existing-appointment.md).
+
 ---
 
 ## FR-APT-016 — Appointment Completion

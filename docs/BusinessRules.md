@@ -578,6 +578,10 @@ If the new time slot cannot be successfully reserved, the existing appointment s
 
 The system shall not cancel or invalidate the original appointment before successfully securing the replacement time.
 
+Rescheduling shall update StartTime, EndTime, and UpdatedAt on the existing row in one transaction, preserving Id, PatientId, DoctorId, MedicalSpecialtyId, CreatedAt, and Scheduled status. Any failed operation shall roll back and leave the original row unchanged.
+
+The appointment shall be excluded from its own conflict check. Concurrent rescheduling, cancellation, or completion shall be coordinated using the current appointment state, as defined in [ADR-0010](adr/0010-rescheduled-existing-appointment.md).
+
 ---
 
 ## BR-APT-019 — Appointment Ownership

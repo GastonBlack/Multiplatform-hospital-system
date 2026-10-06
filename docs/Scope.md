@@ -278,6 +278,8 @@ The system will support:
 
 Each appointment references a Patient, a Doctor, and a MedicalSpecialty directly. Booking and rescheduling must validate that the doctor is assigned to the selected specialty.
 
+Rescheduling changes the existing appointment's time atomically, preserving its Id, patient, doctor, specialty, and Scheduled status. A failed operation leaves the original appointment unchanged. Version 1 does not introduce replacement records or a separate history of previous intervals.
+
 The system must prevent:
 
 - unverified patients from booking appointments;

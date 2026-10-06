@@ -182,6 +182,8 @@ Examples requiring atomic persistence include:
 - appointment booking;
 - appointment rescheduling.
 
+Rescheduling updates the existing Appointment's StartTime, EndTime, and UpdatedAt in one transaction, preserving its identifier, associations, creation timestamp, and Scheduled status. Failure rolls back the operation. [ADR-0010](adr/0010-rescheduled-existing-appointment.md) defines this time-only workflow; concurrent mutations of the same appointment must participate in the selected concurrency protocol.
+
 Cross-module reads involved in a write must use authoritative data and the transaction/locking strategy chosen for that workflow. Reading valid data before a transaction is not sufficient if another request can change it before the write completes.
 
 The ERD proposes PostgreSQL exclusion constraints for overlapping appointment and availability intervals. These protect interval conflicts; they do not replace the additional checks for patient eligibility, doctor-specialty membership, or availability containment.

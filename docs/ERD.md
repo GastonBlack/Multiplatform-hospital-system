@@ -217,7 +217,11 @@ It stores the actual interval and one of the Scheduled, Cancelled, or Completed 
 
 Cancellation updates the state and preserves the row. Cancelled and Completed are terminal states.
 
-Rescheduling must preserve the original appointment if the replacement interval cannot be reserved. Updating the existing row inside a transaction is a simple candidate for Version 1; its history policy remains pending.
+Rescheduling updates StartTime, EndTime, and UpdatedAt on the existing row inside one transaction. Id, PatientId, DoctorId, MedicalSpecialtyId, CreatedAt, and Scheduled status remain unchanged. If validation or persistence fails, roll back and preserve the original row unchanged.
+
+Exclude this row from its own application-level conflict check. The appointment exclusion constraint applies to interval updates as well as inserts. Coordination of simultaneous updates to the same appointment still requires a concurrency protocol.
+
+Version 1 does not introduce replacement appointment rows or a rescheduling-history table. See [ADR-0010](adr/0010-rescheduled-existing-appointment.md).
 
 ---
 
@@ -300,7 +304,7 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 - Exact permissions available to PendingVerification accounts.
 - Holiday rules.
 - Effect of specialty deactivation, assignment removal, and doctor suspension on existing appointments.
-- Rescheduling persistence and history policy.
+- Concurrency protocol for simultaneous rescheduling, cancellation, or completion of the same appointment.
 - Transaction and locking strategy for validation across tables.
 - Migration details and concurrency tests for the proposed exclusion constraints.
 

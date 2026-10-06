@@ -18,7 +18,7 @@ Propose GiST exclusion constraints combining DoctorId equality with overlapping 
 
 Apply appointment exclusion only to Scheduled rows and availability exclusion to all DoctorAvailability periods. Use half-open intervals [StartTime, EndTime) so adjacent appointments can share a boundary without overlapping.
 
-Execute rescheduling as one transaction. If the replacement cannot be secured, preserve the original appointment unchanged. Updating the existing Appointment row is a candidate, not yet an accepted history policy.
+Execute rescheduling as one transaction updating the existing Appointment's time, as accepted in [ADR-0010](0010-rescheduled-existing-appointment.md). Preserve its Id and associations; if the replacement interval cannot be secured, roll back and preserve the original appointment unchanged. No replacement row or separate rescheduling-history table is introduced in Version 1.
 
 ## Alternatives Considered
 

@@ -460,7 +460,11 @@ Rescheduling must be atomic:
 
 The original appointment must not be lost because the replacement interval is unavailable.
 
-Whether rescheduling updates the existing record or creates a linked replacement remains an implementation decision.
+Rescheduling updates StartTime and EndTime on the existing Appointment and updates UpdatedAt. Id, PatientId, DoctorId, MedicalSpecialtyId, CreatedAt, and Scheduled status remain unchanged. The operation changes time only; it does not cancel the original row or create a replacement.
+
+The appointment being rescheduled must be excluded from its own conflict check. Concurrent changes to that appointment must be coordinated so stale requests cannot overwrite a cancellation, completion, or another time change.
+
+Version 1 does not store a separate history of previous appointment intervals. See [ADR-0010](adr/0010-rescheduled-existing-appointment.md).
 
 ### Concurrency
 
@@ -506,7 +510,7 @@ The following decisions must be resolved in subsequent design work:
 - the persistence representation of doctor-specialty assignments;
 - how specialty deactivation or assignment removal affects existing appointments;
 - how doctor suspension or deactivation affects availability and existing appointments;
-- the persistence and history strategy for rescheduling;
+- the concurrency protocol for simultaneous changes to the same appointment;
 - the PostgreSQL strategy for preventing concurrent overlapping bookings.
 
 These are open design decisions, not implemented guarantees.
