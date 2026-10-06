@@ -424,9 +424,9 @@ Slots shall be calculated dynamically and shall not be persisted as separate ent
 
 ## BR-AVL-010 — Hospital Operating Window
 
-Availability periods shall fit within 09:00–18:00 on one America/Montevideo local date. Only complete grid-aligned slots within doctor availability may be offered.
+Availability periods shall fit within 09:00–18:00 on one America/Montevideo local date, Monday through Friday. Only complete grid-aligned slots within doctor availability may be offered. Saturday and Sunday shall not be bookable.
 
-The window allows at most 18 slots per doctor on a fully available day before bookings are excluded. It shall not imply that the doctor works the full window or that the hospital opens every day. Operating weekdays and holiday rules remain pending.
+The window allows at most 18 slots per doctor on a fully available operating day before bookings are excluded. It shall not imply that the doctor works the full window. Holiday rules remain pending.
 
 ---
 
@@ -606,7 +606,7 @@ When an appointment is cancelled, its previous slot may become available for boo
 
 Each appointment shall last exactly 30 minutes. Booking and rescheduling shall use starts on the half-hour grid anchored at 09:00 in America/Montevideo, with no seconds or fractional seconds.
 
-The first possible start is 09:00; the last is 17:30, ending at 18:00. The interval shall fit within the operating window and valid doctor availability on the same local date. An 18:00 start is invalid.
+The first possible start is 09:00; the last is 17:30, ending at 18:00. The interval shall fit within the operating window and valid doctor availability on the same local date, Monday through Friday as evaluated in America/Montevideo. An 18:00 start is invalid.
 
 Timestamp instants shall be interpreted consistently regardless of the client, API host, or database session's default time zone. See [ADR-0009](adr/0009-appointment-time-policy.md).
 

@@ -2,19 +2,19 @@
 
 ## Status
 
-Accepted for Version 1. Operating weekdays and holiday rules remain pending.
+Accepted for Version 1. Holiday rules remain pending.
 
 ## Context
 
 Dynamic slot calculation needs a defined appointment duration and a consistent interpretation of hospital hours across web, mobile, and API instances.
 
-Version 1 assumes one hospital in Uruguay with appointments during a 09:00–18:00 operating window.
+Version 1 assumes one hospital in Uruguay with appointments Monday through Friday during a 09:00–18:00 operating window.
 
 ## Decision
 
 - All Version 1 appointments last exactly 30 minutes.
 - Interpret hospital hours and scheduling dates in America/Montevideo (where I live).
-- Availability periods must fit within 09:00–18:00 on one hospital-local date.
+- Availability periods must fit within 09:00–18:00 on one hospital-local date, Monday through Friday. Saturday and Sunday are not bookable.
 - Appointment starts follow a 30-minute grid anchored at 09:00, with no seconds or fractional seconds.
 - The first possible start is 09:00; the last is 17:30, ending at 18:00. Starting at 18:00 is invalid.
 - Each appointment must fit entirely within a doctor's availability, be in the future, and satisfy the existing booking rules.
@@ -26,7 +26,7 @@ Retain the named hospital time zone separately from stored instants; timestamptz
 
 A doctor available continuously from 09:00 to 18:00 has 18 potential slots before existing appointments are excluded. This is a capacity ceiling, not an automatically generated daily schedule. Shorter periods, breaks, and occupied intervals reduce availability. For periods with boundaries between grid points, return only complete grid-aligned slots that fit within the period.
 
-Operating weekdays and holiday rules must be decided before implementing the scheduling calendar. The operating window does not imply that the hospital opens every day.
+Evaluate the weekday in America/Montevideo, not from the UTC date or the client's time zone. Holiday rules must still be decided before implementing the scheduling calendar; this decision does not introduce a holiday calendar.
 
 ## Alternatives Considered
 
@@ -40,7 +40,7 @@ Operating weekdays and holiday rules must be decided before implementing the sch
 - One duration and grid simplify slot calculation and validation.
 - The operating window alone does not establish a doctor's availability.
 - Backend validation must reject off-grid starts, invalid duration, and intervals outside local hospital hours.
-- Tests must cover 09:00, 17:30–18:00, rejection of an 18:00 start, off-grid starts, partial availability, occupied slots, and equivalent timestamps expressed with different offsets.
+- Tests must cover 09:00, 17:30–18:00, rejection of an 18:00 start, off-grid starts, partial availability, occupied slots, Monday/Friday acceptance, Saturday/Sunday rejection, and equivalent timestamps expressed with different offsets.
 - Duration customization and extended opening hours would require a revised policy.
 
 ## Revisit When

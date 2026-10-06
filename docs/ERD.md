@@ -284,7 +284,7 @@ Identification, employee, and license numbers are text because they are identifi
 
 timestamptz represents an instant; it does not preserve an original named time zone. API timestamps use ISO 8601 with UTC or an explicit offset. Hospital-local dates and hours are interpreted in America/Montevideo independently of server or database session defaults.
 
-Appointments last exactly 30 minutes and follow a half-hour grid from 09:00 through 17:30, ending by 18:00. Availability must fit within that local operating window on a single date. Backend validation applies these rules when creating availability, booking, or rescheduling; database interval constraints do not replace local-hour validation. See [ADR-0009](adr/0009-appointment-time-policy.md).
+Appointments last exactly 30 minutes and follow a half-hour grid from 09:00 through 17:30, ending by 18:00, Monday through Friday. Availability must fit within that local operating window on a single date. Evaluate weekdays in America/Montevideo; Saturday and Sunday are not bookable. Backend validation applies these rules when creating availability, booking, or rescheduling; database interval constraints do not replace local-hour or weekday validation. See [ADR-0009](adr/0009-appointment-time-policy.md).
 
 PostgreSQL storage names and Entity Framework Core mappings will be defined during implementation; the diagram uses domain names for readability.
 
@@ -298,7 +298,7 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 - Email and national-identification normalization policies.
 - Complete administrative AccountStatus transition policy.
 - Exact permissions available to PendingVerification accounts.
-- Operating weekdays and holiday rules.
+- Holiday rules.
 - Effect of specialty deactivation, assignment removal, and doctor suspension on existing appointments.
 - Rescheduling persistence and history policy.
 - Transaction and locking strategy for validation across tables.

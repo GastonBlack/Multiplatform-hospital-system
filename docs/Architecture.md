@@ -111,7 +111,7 @@ Patient verification is a Patients use case, restricted to authorized receptioni
 
 Bookable-slot calculation belongs to Appointments because it combines availability periods with occupied appointment intervals. Availability supplies the periods; Appointments supplies the occupied intervals and performs scheduling operations.
 
-Scheduling uses the [ADR-0009](adr/0009-appointment-time-policy.md) policy: 30-minute appointments on a half-hour grid within 09:00–18:00 in America/Montevideo. API timestamp instants use UTC or explicit offsets; local-hour validation must not depend on deployment or client time-zone defaults. Operating weekdays and holidays remain pending.
+Scheduling uses the [ADR-0009](adr/0009-appointment-time-policy.md) policy: 30-minute appointments on a half-hour grid Monday through Friday within 09:00–18:00 in America/Montevideo. API timestamp instants use UTC or explicit offsets; local-hour and weekday validation must not depend on deployment or client time-zone defaults. Holiday rules remain pending.
 
 ---
 
