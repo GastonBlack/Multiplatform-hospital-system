@@ -98,6 +98,7 @@ erDiagram
         timestamptz StartTime
         timestamptz EndTime
         text Status
+        text CancellationReason "Nullable; required for interruption cancellations"
         timestamptz CreatedAt
         timestamptz UpdatedAt
     }
@@ -217,6 +218,10 @@ It stores the actual interval and one of the Scheduled, Cancelled, or Completed 
 
 Cancellation updates the state and preserves the row. Cancelled and Completed are terminal states.
 
+CancellationReason stores the patient-visible reason and is required for receptionist cancellations caused by doctor suspension/deactivation or specialty deactivation. No separate notification table is introduced: clients display the persisted cancellation information in appointment lists and details, including future cancelled appointments.
+
+An inactive specialty or non-Active doctor account blocks new booking and rescheduling for that selection. Existing appointments and availability are preserved until normal workflows change them; reception decides which future appointments to cancel. See [ADR-0011](adr/0011-service-interruption-cancellations.md).
+
 Rescheduling updates StartTime, EndTime, and UpdatedAt on the existing row inside one transaction. Id, PatientId, DoctorId, MedicalSpecialtyId, CreatedAt, and Scheduled status remain unchanged. If validation or persistence fails, roll back and preserve the original row unchanged.
 
 Exclude this row from its own application-level conflict check. The appointment exclusion constraint applies to interval updates as well as inserts. Coordination of simultaneous updates to the same appointment still requires a concurrency protocol.
@@ -248,6 +253,7 @@ Version 1 does not introduce replacement appointment rows or a rescheduling-hist
 | Appointment | EndTime greater than StartTime |
 | Appointment | EndTime minus StartTime equals exactly 30 minutes |
 | Appointment | Status restricted to Scheduled, Cancelled, or Completed; initial status Scheduled |
+| Appointment | Nullable CancellationReason; the interruption-cancellation use case requires a patient-visible reason |
 
 Foreign keys should restrict deletion of referenced rows rather than cascade-delete appointment history or verification actors. Account deactivation is a status change, not deletion.
 
@@ -303,7 +309,7 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 - Complete administrative AccountStatus transition policy.
 - Exact permissions available to PendingVerification accounts.
 - Holiday rules.
-- Effect of specialty deactivation, assignment removal, and doctor suspension on existing appointments.
+- Effect of specialty assignment removal on existing appointments.
 - Concurrency protocol for simultaneous rescheduling, cancellation, or completion of the same appointment.
 - Transaction and locking strategy for validation across tables.
 - Migration details and concurrency tests for the proposed exclusion constraints.

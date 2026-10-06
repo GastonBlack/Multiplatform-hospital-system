@@ -105,6 +105,10 @@ Services may use EF Core directly for their module's data. Version 1 does not re
 | Availability | DoctorAvailability periods and protection of existing appointments when availability changes |
 | Appointments | Booking, cancellation, completion, rescheduling, schedules, history, calculated bookable slots |
 
+Appointments owns persisted CancellationReason and the receptionist review/cancellation use case under [ADR-0011](adr/0011-service-interruption-cancellations.md). Doctor account and specialty state changes block new scheduling but do not automatically cancel appointments. Booking validates current doctor and specialty eligibility against authoritative data.
+
+Both patient clients display cancellation information and next-step instructions from appointment lists and details, including future cancelled appointments, when loaded or refreshed. This does not introduce a separate notification module, background delivery, or real-time messaging in Version 1.
+
 DoctorSpecialty belongs to Doctors as a persistence association with MedicalSpecialties. Appointment retains separate DoctorId and MedicalSpecialtyId references.
 
 Patient verification is a Patients use case, restricted to authorized receptionists. Administration is an actor capability expressed through authorized endpoints in the relevant modules, rather than a second owner of their data.

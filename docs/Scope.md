@@ -280,6 +280,10 @@ Each appointment references a Patient, a Doctor, and a MedicalSpecialty directly
 
 Rescheduling changes the existing appointment's time atomically, preserving its Id, patient, doctor, specialty, and Scheduled status. A failed operation leaves the original appointment unchanged. Version 1 does not introduce replacement records or a separate history of previous intervals.
 
+Doctor suspension/deactivation and specialty deactivation block new bookings and rescheduling for the affected selection but do not automatically cancel existing appointments or remove availability. Reception reviews future Scheduled appointments and cancels those affected through the normal workflow, recording a patient-visible CancellationReason.
+
+Both patient clients display cancellation status, reason, and instructions to book another appointment or contact reception in appointment lists and details, including future cancelled appointments. Notices appear when persisted data is loaded or refreshed. Email, SMS, push, and real-time notification delivery are not required in Version 1. No Suspended appointment state is introduced.
+
 The system must prevent:
 
 - unverified patients from booking appointments;

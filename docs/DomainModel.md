@@ -385,6 +385,7 @@ Appointment represents a scheduled meeting between a patient and a doctor for a 
 - StartTime
 - EndTime
 - Status
+- CancellationReason
 - CreatedAt
 - UpdatedAt
 
@@ -406,6 +407,7 @@ The application validates that the doctor is assigned to the selected specialty 
 
 - The patient must be identity verified.
 - The patient's account must be Active.
+- The doctor's User account must be Active and the selected MedicalSpecialty must be active.
 - EndTime must be later than StartTime.
 - The appointment cannot start in the past.
 - The appointment must last exactly 30 minutes, start on the hospital's half-hour grid, and fit within 09:00–18:00 on one America/Montevideo local date, Monday through Friday.
@@ -440,6 +442,12 @@ Cancelled and Completed are terminal states.
 - Only Scheduled appointments may be cancelled.
 - A cancelled appointment releases its interval for booking when the interval remains in the future and satisfies availability and scheduling rules.
 - Cancellation preserves the appointment record.
+
+CancellationReason is optional except when reception cancels an appointment because of doctor suspension/deactivation or specialty deactivation; that workflow requires a patient-visible explanation.
+
+Such account or specialty changes block new bookings and rescheduling for the affected selection, but preserve availability and existing appointments. Reception reviews future Scheduled appointments and cancels those affected. There is no Suspended appointment state.
+
+Patients can view the cancellation status and reason in appointment lists and details, including future cancelled appointments, with instructions to book another appointment or contact reception. These notices appear when the application loads or refreshes persisted data; email, SMS, and push remain outside Version 1. See [ADR-0011](adr/0011-service-interruption-cancellations.md).
 
 ### Completion
 
@@ -508,8 +516,7 @@ The following decisions must be resolved in subsequent design work:
 - the exact permissions available to PendingVerification accounts;
 - holiday rules;
 - the persistence representation of doctor-specialty assignments;
-- how specialty deactivation or assignment removal affects existing appointments;
-- how doctor suspension or deactivation affects availability and existing appointments;
+- how specialty assignment removal affects existing appointments;
 - the concurrency protocol for simultaneous changes to the same appointment;
 - the PostgreSQL strategy for preventing concurrent overlapping bookings.
 

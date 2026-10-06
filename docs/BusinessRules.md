@@ -616,6 +616,24 @@ Timestamp instants shall be interpreted consistently regardless of the client, A
 
 ---
 
+## BR-APT-023 — Provider and Specialty Booking Eligibility
+
+Booking and rescheduling shall require the doctor's User account to be Active and the selected MedicalSpecialty to be active. Non-eligible selections shall not offer bookable slots.
+
+Account or specialty state changes shall preserve existing appointments and availability. Scheduled appointments shall continue blocking their intervals until a valid appointment workflow changes their state.
+
+---
+
+## BR-APT-024 — Interruption Cancellation and Patient Notice
+
+Authorized receptionists shall review future Scheduled appointments affected by doctor suspension/deactivation or specialty deactivation and decide which to cancel. The account or specialty change shall not itself cancel the appointments.
+
+Cancellation shall use Scheduled → Cancelled, preserve the row, and require a patient-visible CancellationReason for this workflow. Patients shall have access to the cancellation status, reason, and booking/reception instructions in application appointment lists and details, including future cancelled appointments. No Suspended appointment state is introduced.
+
+This notice uses persisted appointment data when loaded or refreshed; external notifications remain future functionality. Moving to another doctor or specialty requires cancellation and a separate booking, rather than the time-only rescheduling operation. See [ADR-0011](adr/0011-service-interruption-cancellations.md).
+
+---
+
 # 11. Receptionist Rules
 
 ## BR-REC-001 — Receptionist Role

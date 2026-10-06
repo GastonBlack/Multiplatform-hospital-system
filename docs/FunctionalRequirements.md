@@ -301,6 +301,8 @@ EmployeeNumber shall be unique across Doctor and Staff profiles, with number own
 
 The system shall allow administrators to activate, suspend, or deactivate doctor accounts.
 
+Only doctors with Active User accounts shall accept new bookings or rescheduling. Suspension or deactivation shall preserve availability and existing appointments for receptionist review under FR-APT-025.
+
 ---
 
 ## FR-DOC-004 — Doctor Specialties
@@ -482,6 +484,8 @@ The system shall allow administrators to modify medical specialty information.
 ## FR-SPEC-003 — Specialty Status
 
 The system shall allow medical specialties to be activated or deactivated.
+
+Inactive specialties shall not accept new bookings or rescheduling. Existing appointments shall be preserved for receptionist review under FR-APT-025.
 
 ---
 
@@ -745,6 +749,16 @@ The system shall allow authorized users to retrieve the details of a specific ap
 Booking and rescheduling shall require exactly 30-minute appointments starting on the hospital-local half-hour grid between 09:00 and 17:30 and ending no later than 18:00 on the same local date, Monday through Friday as evaluated in America/Montevideo.
 
 The system shall interpret hospital dates and hours in America/Montevideo and exchange timestamp instants as ISO 8601 values with UTC or an explicit offset, according to [ADR-0009](adr/0009-appointment-time-policy.md).
+
+---
+
+## FR-APT-025 — Interruption Review and Cancellation Notice
+
+Authorized receptionists shall be able to review future Scheduled appointments affected by doctor suspension/deactivation or specialty deactivation and cancel those that cannot proceed. Account or specialty changes shall not automatically cancel appointments.
+
+This cancellation workflow shall require a patient-visible CancellationReason. Both patient clients shall display the Cancelled status, reason, and instructions to book another appointment or contact reception in appointment lists and details. Future cancelled appointments shall remain accessible to the patient.
+
+The notice shall be based on persisted appointment data when loaded or refreshed, without requiring email, SMS, push, or real-time delivery. No Suspended appointment state shall be introduced. See [ADR-0011](adr/0011-service-interruption-cancellations.md).
 
 ---
 
