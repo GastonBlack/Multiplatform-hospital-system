@@ -97,7 +97,7 @@ Services may use EF Core directly for their module's data. Version 1 does not re
 | Module | Owned information and behavior |
 | --- | --- |
 | Authentication | Login, access-token issuance, refresh-token rotation and revocation, logout |
-| Users | User accounts, shared names and email, password hashes, AccountStatus, account updates |
+| Users | User accounts, shared names and email, password hashes, AccountStatus, account updates, technical EmployeeNumbers registration |
 | Patients | Patient profiles, public registration workflow, in-person registration and identity verification |
 | Doctors | Doctor profiles, employee and license information, doctor-specialty assignments |
 | Staff | Staff profiles, EmployeeNumber, StaffRole, administrator-managed staff creation |
@@ -156,6 +156,7 @@ For example:
 
 - Patients coordinates registration with Users to create an account and a Patient profile together.
 - Doctors and Staff coordinate their administrator-created accounts with Users.
+- Users registers each employee number centrally in EmployeeNumbers for the owning account; Doctors and Staff reference that registration for their profiles.
 - Doctors validates specialty assignments through MedicalSpecialties.
 - Appointments obtains patient eligibility, doctor-specialty assignment, and availability through their owning modules.
 
@@ -174,6 +175,7 @@ The service coordinating a write use case owns the transaction and commit. Suppo
 Examples requiring atomic persistence include:
 
 - User and profile creation;
+- employee account, EmployeeNumbers registration, and Doctor or Staff profile creation;
 - patient identity verification and activation of an eligible PendingVerification account;
 - appointment booking;
 - appointment rescheduling.
@@ -182,7 +184,9 @@ Cross-module reads involved in a write must use authoritative data and the trans
 
 The ERD proposes PostgreSQL exclusion constraints for overlapping appointment and availability intervals. These protect interval conflicts; they do not replace the additional checks for patient eligibility, doctor-specialty membership, or availability containment.
 
-Exactly-one-profile enforcement, global EmployeeNumber uniqueness, and coordinated concurrency rules remain pending as documented in the ERD. A shared DbContext alone does not guarantee them.
+Global EmployeeNumber ownership is enforced through the EmployeeNumbers registry primary key and composite foreign keys from Doctor and Staff. Registry creation participates in the employee-registration transaction; it is not a separate domain module.
+
+Exactly-one-profile enforcement and coordinated concurrency rules remain pending as documented in the ERD. The registry does not replace profile exclusivity, and a shared DbContext alone does not guarantee these rules.
 
 ---
 

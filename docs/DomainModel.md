@@ -271,7 +271,7 @@ Version 1 does not introduce a shared Employee entity.
 
 Doctor and Staff each contain EmployeeNumber.
 
-The persistence mechanism that guarantees global EmployeeNumber uniqueness across both profile types will be decided during database design.
+Global EmployeeNumber ownership is centralized in a technical EmployeeNumbers registry at the persistence layer, as documented in the [ERD](ERD.md) and [ADR-0007](adr/0007-employee-number-registry.md). This does not introduce an Employee domain entity or change the profile attributes.
 
 ---
 
@@ -486,7 +486,7 @@ A User may verify multiple patients if authorized as a receptionist when perform
 The following decisions must be resolved in subsequent design work:
 
 - how to enforce exactly one profile type per User in persistence;
-- how to enforce global EmployeeNumber uniqueness across Doctor and Staff;
+- EmployeeNumber normalization and generation policies;
 - the uniqueness policy for MedicalLicenseNumber;
 - the complete administrative AccountStatus transition policy;
 - the exact permissions available to PendingVerification accounts;

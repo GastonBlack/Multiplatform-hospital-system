@@ -228,7 +228,7 @@ Verification status is determined from these attributes rather than a separate p
 - Doctor search and filtering.
 - Doctor schedule access.
 
-`EmployeeNumber` must be unique across Doctor and Staff profiles. Version 1 does not introduce a shared Employee entity; the enforcement mechanism will be decided during database design.
+`EmployeeNumber` must be unique across Doctor and Staff profiles. A technical `EmployeeNumbers` registry associates each number with one User account. Version 1 does not introduce a shared Employee domain entity.
 
 ---
 

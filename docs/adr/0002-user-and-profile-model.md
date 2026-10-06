@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Version 1. Cross-table persistence enforcement remains pending.
+Accepted for Version 1. Exactly-one-profile persistence enforcement remains pending; employee-number registration is defined in ADR-0007.
 
 ## Context
 
@@ -22,6 +22,8 @@ Store patient verification through IdentityVerifiedAt and IdentityVerifiedByUser
 
 Keep EmployeeNumber on Doctor and Staff rather than introducing Employee. It must identify an employee uniquely across both profile types.
 
+The technical EmployeeNumbers registry described in [ADR-0007](0007-employee-number-registry.md) centralizes number ownership without introducing an Employee domain entity.
+
 ## Alternatives Considered
 
 - One User table containing all profile attributes: fewer tables, but mixes unrelated patient, medical, and staff information.
@@ -36,7 +38,7 @@ Keep EmployeeNumber on Doctor and Staff rather than introducing Employee. It mus
 - Verified identity and account access remain independent.
 - Account and profile creation must be atomic.
 - Unique UserId constraints in each table do not enforce exactly one profile across all tables.
-- Separate unique EmployeeNumber constraints do not enforce uniqueness across Doctor and Staff. Both cross-table mechanisms must be resolved before implementation.
+- Separate unique EmployeeNumber constraints do not enforce uniqueness across Doctor and Staff. ADR-0007 adds centralized number ownership and matching profile references; exactly-one-profile enforcement remains a separate pending decision.
 
 ## Revisit When
 

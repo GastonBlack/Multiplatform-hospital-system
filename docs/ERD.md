@@ -17,6 +17,9 @@ erDiagram
     User ||..o| Patient : has_patient_profile
     User ||..o| Doctor : has_doctor_profile
     User ||..o| Staff : has_staff_profile
+    User ||..o| EmployeeNumbers : owns_employee_number
+    EmployeeNumbers ||..o| Doctor : identifies_doctor
+    EmployeeNumbers ||..o| Staff : identifies_staff
     User o|..o{ Patient : verifies_identity
     Doctor ||--o{ DoctorSpecialty : has_assignments
     MedicalSpecialty ||--o{ DoctorSpecialty : has_assignments
@@ -49,15 +52,20 @@ erDiagram
     Doctor {
         uuid Id PK
         uuid UserId FK, UK
-        text EmployeeNumber UK "Also unique across Staff"
+        text EmployeeNumber FK, UK "Part of composite FK with UserId"
         text MedicalLicenseNumber "Uniqueness policy pending"
     }
 
     Staff {
         uuid Id PK
         uuid UserId FK, UK
-        text EmployeeNumber UK "Also unique across Doctor"
+        text EmployeeNumber FK, UK "Part of composite FK with UserId"
         text StaffRole
+    }
+
+    EmployeeNumbers {
+        text EmployeeNumber PK
+        uuid UserId FK, UK
     }
 
     MedicalSpecialty {
@@ -94,6 +102,8 @@ erDiagram
 The three profile relationships are mutually exclusive: each User must have exactly one Patient, Doctor, or Staff profile in total. Mermaid shows the individual optional relationships but does not express this cross-table rule.
 
 The second User–Patient relationship represents identity verification through IdentityVerifiedByUserId. It is distinct from the patient's account relationship through UserId.
+
+EmployeeNumbers is a technical registry, not an additional User profile or Employee domain entity. Each employee profile references the registry through the composite pair (EmployeeNumber, UserId).
 
 ---
 
@@ -153,9 +163,17 @@ Doctor stores EmployeeNumber and MedicalLicenseNumber. Staff stores EmployeeNumb
 
 StaffRole accepts Receptionist or Administrator. No separate Receptionist, Administrator, or Employee table is introduced in Version 1.
 
-EmployeeNumber has a unique constraint in each table. Global uniqueness across both tables is an additional requirement that these independent constraints do not enforce.
+EmployeeNumbers centrally registers EmployeeNumber as its primary key and UserId as a required unique foreign key to User.Id. This gives each registered number one account owner and each account at most one registered number.
 
-The cross-table enforcement mechanism remains pending. An application-only check followed by an insert is insufficient under concurrent requests.
+Declare an additional UNIQUE (EmployeeNumber, UserId) key on EmployeeNumbers as the target of composite foreign keys from Doctor and Staff. Each profile must reference the registry using both columns, preventing it from using a number registered to another User.
+
+EmployeeNumber remains required and unique in each employee profile. The registry primary key enforces global number ownership, including concurrent registration attempts. Combined with the separate exactly-one-profile rule, a number identifies exactly one Doctor or Staff profile.
+
+Account, number registration, and employee profile creation must be committed together. Deactivation preserves the number registration. Number normalization and generation policies remain pending.
+
+The registry does not, by itself, prevent a User from having both profile types or ensure every registry row has an employee profile. These are distinct profile-consistency rules, not guarantees of number uniqueness.
+
+See [ADR-0007](adr/0007-employee-number-registry.md) for the decision and alternatives.
 
 ### 4.4 Doctor and MedicalSpecialty
 
@@ -201,7 +219,9 @@ Rescheduling must preserve the original appointment if the replacement interval 
 | Patient | Unique NationalIdentificationNumber |
 | Patient | Verification fields both absent or both populated |
 | Patient | Nullable IdentityVerifiedByUserId referencing User.Id |
-| Doctor, Staff | Unique EmployeeNumber within each table, plus separate cross-table enforcement |
+| EmployeeNumbers | EmployeeNumber primary key; required unique UserId referencing User.Id |
+| EmployeeNumbers | UNIQUE (EmployeeNumber, UserId) as the composite foreign-key target |
+| Doctor, Staff | Required unique EmployeeNumber and composite (EmployeeNumber, UserId) foreign key to EmployeeNumbers |
 | Staff | StaffRole restricted to Receptionist or Administrator |
 | DoctorSpecialty | Composite primary key (DoctorId, MedicalSpecialtyId) and both foreign keys |
 | DoctorAvailability | DoctorId foreign key and EndTime greater than StartTime |
@@ -255,7 +275,7 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 ## 8. Decisions Still Required
 
 - Database enforcement of exactly one profile per User.
-- Global EmployeeNumber uniqueness across Doctor and Staff.
+- EmployeeNumber normalization and generation policies.
 - MedicalLicenseNumber uniqueness policy.
 - Email and national-identification normalization policies.
 - Complete administrative AccountStatus transition policy.

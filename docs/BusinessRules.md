@@ -275,7 +275,7 @@ Doctor accounts shall only be created by authorized administrators.
 
 Public doctor registration shall not be supported.
 
-The Doctor profile shall contain UserId, EmployeeNumber, and MedicalLicenseNumber. EmployeeNumber shall identify at most one employee across Doctor and Staff profiles. The persistence enforcement mechanism and MedicalLicenseNumber uniqueness policy remain to be defined.
+The Doctor profile shall contain UserId, EmployeeNumber, and MedicalLicenseNumber. EmployeeNumber shall identify at most one employee across Doctor and Staff profiles. Its ownership shall be centralized in EmployeeNumbers and match the profile's UserId. Account, number registration, and profile creation shall be atomic. The MedicalLicenseNumber uniqueness policy remains to be defined.
 
 ---
 
@@ -647,6 +647,8 @@ Only authorized administrators shall create doctor accounts.
 Only authorized administrators shall create or administratively manage staff accounts for receptionists and administrators.
 
 Each Staff profile shall contain UserId, EmployeeNumber, and exactly one StaffRole. EmployeeNumber shall identify at most one employee across Doctor and Staff profiles. Version 1 shall not introduce a shared Employee entity.
+
+EmployeeNumbers shall register the number for the same User as the Staff profile. Account, number registration, and profile creation shall be atomic. Account deactivation shall not release the number registration.
 
 ---
 
