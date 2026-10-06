@@ -186,13 +186,17 @@ The ERD proposes PostgreSQL exclusion constraints for overlapping appointment an
 
 Global EmployeeNumber ownership is enforced through the EmployeeNumbers registry primary key and composite foreign keys from Doctor and Staff. Registry creation participates in the employee-registration transaction; it is not a separate domain module.
 
-Exactly-one-profile enforcement and coordinated concurrency rules remain pending as documented in the ERD. The registry does not replace profile exclusivity, and a shared DbContext alone does not guarantee these rules.
+Exactly-one-profile enforcement uses User.ProfileType, fixed profile-table discriminators, composite foreign keys, unique UserId, and initially deferred constraint triggers, as selected in [ADR-0008](adr/0008-single-user-profile.md). Registration services must handle validation failures at transaction commit; migrations and tests must verify the database behavior.
+
+Coordinated scheduling concurrency and the locking/visibility details of profile mutations still require implementation design and validation. The employee-number registry and shared DbContext do not replace these guarantees.
 
 ---
 
 ## 8. Authentication and Authorization
 
 User is the authentication account; Patient, Doctor, and Staff are associated profiles.
+
+User.ProfileType identifies the single associated profile type. It does not replace StaffRole or resource-ownership and account-status checks.
 
 Authorization distinguishes Patient, Doctor, Receptionist, and Administrator. The two staff roles are derived from StaffRole, not separate profile tables.
 

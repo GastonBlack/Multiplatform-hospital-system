@@ -101,6 +101,8 @@ Two user accounts shall not share the same email address.
 
 Every User account shall have exactly one Patient, Doctor, or Staff profile, linked through UserId.
 
+User.ProfileType shall match the profile and shall be Patient, Doctor, or Staff. This is separate from StaffRole. Database type constraints, composite foreign keys, and unique UserId shall enforce at most one matching profile; deferred constraint triggers shall reject committed states with no profile, as defined in [ADR-0008](adr/0008-single-user-profile.md).
+
 Patient and Doctor authorization roles correspond to their profile types. Receptionist and Administrator are StaffRole values on Staff, not separate profile entities. Each Staff profile shall have exactly one StaffRole.
 
 Version 1 roles are:

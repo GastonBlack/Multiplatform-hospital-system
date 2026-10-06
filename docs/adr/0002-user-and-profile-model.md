@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Version 1. Exactly-one-profile persistence enforcement remains pending; employee-number registration is defined in ADR-0007.
+Accepted for Version 1. Employee-number registration is defined in ADR-0007; exactly-one-profile enforcement is defined in ADR-0008.
 
 ## Context
 
@@ -15,6 +15,8 @@ Patient identity verification must remain distinct from whether an account is cu
 Use User for shared names, email, password hash, AccountStatus, and account timestamps.
 
 Associate each User with exactly one Patient, Doctor, or Staff profile in Version 1. Preserve separate profile Id and UserId attributes, with UserId unique within each profile table.
+
+User.ProfileType identifies the associated profile type. [ADR-0008](0008-single-user-profile.md) defines type matching through composite foreign keys and deferred validation of profile existence.
 
 Represent Receptionist and Administrator through exactly one StaffRole on Staff. They are not separate profile entities.
 
@@ -37,8 +39,8 @@ The technical EmployeeNumbers registry described in [ADR-0007](0007-employee-num
 - Account operations are centralized while each module owns its profile data.
 - Verified identity and account access remain independent.
 - Account and profile creation must be atomic.
-- Unique UserId constraints in each table do not enforce exactly one profile across all tables.
-- Separate unique EmployeeNumber constraints do not enforce uniqueness across Doctor and Staff. ADR-0007 adds centralized number ownership and matching profile references; exactly-one-profile enforcement remains a separate pending decision.
+- Unique UserId constraints alone do not enforce exactly one profile across all tables; ADR-0008 supplies type matching and deferred existence validation, still requiring implementation tests.
+- Separate unique EmployeeNumber constraints do not enforce uniqueness across Doctor and Staff. ADR-0007 adds centralized number ownership and matching profile references, complemented by ADR-0008 profile exclusivity.
 
 ## Revisit When
 

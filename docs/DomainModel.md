@@ -32,6 +32,7 @@ The main entities are:
 
 Supporting concepts are:
 
+- ProfileType
 - AccountStatus
 - StaffRole
 - AppointmentStatus
@@ -73,6 +74,7 @@ It contains information shared by all account types.
 - LastName
 - Email
 - PasswordHash
+- ProfileType
 - AccountStatus
 - CreatedAt
 - UpdatedAt
@@ -90,8 +92,13 @@ Each User is associated with exactly one:
 - Email identifies at most one User.
 - Passwords are never stored in plaintext.
 - Each User has exactly one profile type in Version 1.
+- ProfileType is Patient, Doctor, or Staff and must match the associated profile. It is distinct from StaffRole.
 - AccountStatus belongs to User rather than being duplicated in each profile.
 - Suspended and deactivated accounts cannot perform protected operations.
+
+### ProfileType
+
+Database enforcement of profile exclusivity and existence is defined in [ADR-0008](adr/0008-single-user-profile.md). Fixed profile-table discriminators are persistence details rather than additional editable profile attributes.
 
 ### Authorization
 
@@ -485,7 +492,7 @@ A User may verify multiple patients if authorized as a receptionist when perform
 
 The following decisions must be resolved in subsequent design work:
 
-- how to enforce exactly one profile type per User in persistence;
+- implementation and concurrency validation of the exactly-one-profile persistence design in ADR-0008;
 - EmployeeNumber normalization and generation policies;
 - the uniqueness policy for MedicalLicenseNumber;
 - the complete administrative AccountStatus transition policy;

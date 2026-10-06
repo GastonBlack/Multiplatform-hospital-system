@@ -34,6 +34,7 @@ erDiagram
         text LastName
         text Email UK
         text PasswordHash
+        text ProfileType "Patient, Doctor, or Staff"
         text AccountStatus
         timestamptz CreatedAt
         timestamptz UpdatedAt
@@ -42,6 +43,7 @@ erDiagram
     Patient {
         uuid Id PK
         uuid UserId FK, UK
+        text ProfileType FK "Fixed Patient; composite FK with UserId"
         text NationalIdentificationNumber UK
         text PhoneNumber
         date DateOfBirth
@@ -52,6 +54,7 @@ erDiagram
     Doctor {
         uuid Id PK
         uuid UserId FK, UK
+        text ProfileType FK "Fixed Doctor; composite FK with UserId"
         text EmployeeNumber FK, UK "Part of composite FK with UserId"
         text MedicalLicenseNumber "Uniqueness policy pending"
     }
@@ -59,6 +62,7 @@ erDiagram
     Staff {
         uuid Id PK
         uuid UserId FK, UK
+        text ProfileType FK "Fixed Staff; composite FK with UserId"
         text EmployeeNumber FK, UK "Part of composite FK with UserId"
         text StaffRole
     }
@@ -141,9 +145,17 @@ This provides:
 - at most one Doctor row for a given User;
 - at most one Staff row for a given User.
 
-These foreign keys and unique constraints do not, by themselves, prevent the same User from appearing in different profile tables or having no profile. The exactly-one-profile rule requires additional enforcement.
+User has a required ProfileType restricted to Patient, Doctor, or Staff, with UNIQUE (Id, ProfileType) as a composite foreign-key target.
 
-Account and profile creation must occur in one transaction. A database enforcement strategy for the cross-table rule remains pending; the diagram must not be interpreted as already guaranteeing it.
+Each profile table has a required ProfileType constrained to its fixed value by a CHECK constraint. Its composite (UserId, ProfileType) foreign key must match the account. Combined with unique UserId, this prevents multiple profile types or duplicate profiles for the same User.
+
+These constraints enforce at most one profile, not its existence. Initially deferred constraint triggers on User and the profile tables must check that each affected, still-existing User has exactly one matching profile before the transaction commits. Changes to account linkage must check both old and new owners.
+
+Account and profile creation occur in one transaction, allowing the temporary account-without-profile state before commit. Removing the only profile while preserving its User must fail. Deactivation preserves the profile.
+
+ProfileType distinguishes profile types; StaffRole distinguishes staff permissions. Fixed ProfileType columns on profile tables are persistence discriminators, not independently editable domain data.
+
+See [ADR-0008](adr/0008-single-user-profile.md). This is the selected enforcement design; trigger implementation, locking, and concurrent-write behavior must still be validated.
 
 ### 4.2 Patient Identity Verification
 
@@ -171,7 +183,7 @@ EmployeeNumber remains required and unique in each employee profile. The registr
 
 Account, number registration, and employee profile creation must be committed together. Deactivation preserves the number registration. Number normalization and generation policies remain pending.
 
-The registry does not, by itself, prevent a User from having both profile types or ensure every registry row has an employee profile. These are distinct profile-consistency rules, not guarantees of number uniqueness.
+The registry does not, by itself, prevent a User from having both profile types or ensure every registry row has an employee profile. Profile exclusivity and existence are handled by ADR-0008; registration workflows must additionally avoid creating employee-number records for Patient accounts.
 
 See [ADR-0007](adr/0007-employee-number-registry.md) for the decision and alternatives.
 
@@ -215,7 +227,10 @@ Rescheduling must preserve the original appointment if the replacement interval 
 | --- | --- |
 | User | Unique Email using a consistently defined email normalization policy |
 | User | AccountStatus restricted to PendingVerification, Active, Suspended, or Deactivated |
-| Patient, Doctor, Staff | Required unique UserId referencing User.Id |
+| User | Required ProfileType restricted to Patient, Doctor, or Staff; UNIQUE (Id, ProfileType) |
+| Patient, Doctor, Staff | Required unique UserId and required ProfileType fixed to the table's type |
+| Patient, Doctor, Staff | Immediate composite (UserId, ProfileType) foreign key to User |
+| User, Patient, Doctor, Staff | Initially deferred constraint triggers requiring exactly one matching profile for each affected, still-existing User |
 | Patient | Unique NationalIdentificationNumber |
 | Patient | Verification fields both absent or both populated |
 | Patient | Nullable IdentityVerifiedByUserId referencing User.Id |
@@ -247,7 +262,7 @@ The proposed implementation uses PostgreSQL tstzrange with a GiST exclusion cons
 
 The appointment exclusion constraint protects booking and rescheduling writes. A failed rescheduling transaction must leave the original row unchanged.
 
-Exclusion constraints alone do not protect availability containment, profile exclusivity, patient eligibility, or doctor-specialty membership. Their validation and the corresponding mutations need a coordinated transaction and locking strategy, still to be defined.
+Exclusion constraints alone do not protect availability containment, patient eligibility, or doctor-specialty membership. Their validation and the corresponding mutations need a coordinated transaction and locking strategy, still to be defined. Profile exclusivity and existence use the separate ADR-0008 design, whose trigger visibility and mutation coordination also require implementation validation.
 
 Redis is not the authority for these validations.
 
@@ -261,7 +276,7 @@ Redis is not the authority for these validations.
 | Names, email, password hash, identification and employee numbers | text |
 | DateOfBirth | date |
 | Appointment, availability, verification, and audit timestamps | timestamptz |
-| AccountStatus, StaffRole, Appointment.Status | text with CHECK constraints |
+| ProfileType, AccountStatus, StaffRole, Appointment.Status | text with CHECK constraints |
 | MedicalSpecialty.IsActive | boolean |
 
 Identification, employee, and license numbers are text because they are identifiers rather than quantities and may contain leading zeros or letters.
@@ -274,7 +289,7 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 
 ## 8. Decisions Still Required
 
-- Database enforcement of exactly one profile per User.
+- Migration details, deferred-trigger behavior, and concurrency validation for the selected exactly-one-profile design.
 - EmployeeNumber normalization and generation policies.
 - MedicalLicenseNumber uniqueness policy.
 - Email and national-identification normalization policies.

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Version 1. Exactly-one-profile enforcement remains a separate pending decision.
+Accepted for Version 1. Exactly-one-profile enforcement is defined separately in ADR-0008.
 
 ## Context
 
@@ -40,7 +40,7 @@ This table is not another User profile or an Employee domain entity. The separat
 - Composite foreign keys reject profiles using another User's registered number.
 - Registration introduces one additional table and transaction participant.
 - EmployeeNumber is stored in the registry and profile; foreign keys keep the pair consistent.
-- The registry does not ensure that every registration has a profile or enforce profile exclusivity. Atomic registration and the separate profile-consistency design must address those rules.
+- The registry does not ensure that every registration has an employee profile or enforce profile exclusivity. Atomic employee registration and [ADR-0008](0008-single-user-profile.md) supply the profile-consistency design; registry registration must be restricted to Doctor and Staff accounts.
 - Implementation tests must cover duplicate registration, mismatched ownership, rollback, and preservation after deactivation.
 
 ## Revisit When

@@ -32,7 +32,7 @@ Execute rescheduling as one transaction. If the replacement cannot be secured, p
 - PostgreSQL can reject overlapping writes regardless of the API instance processing them.
 - Constraints must be accompanied by API conflict handling and PostgreSQL integration tests.
 - Booking versus availability edits, account-status changes, or specialty-assignment changes still needs coordinated validation and transaction design.
-- Exclusion constraints do not enforce exactly-one-profile or global EmployeeNumber uniqueness. Number ownership is handled separately by [ADR-0007](0007-employee-number-registry.md); profile exclusivity remains pending.
+- Exclusion constraints do not enforce exactly-one-profile or global EmployeeNumber uniqueness. Number ownership is handled separately by [ADR-0007](0007-employee-number-registry.md); profile exclusivity and existence use [ADR-0008](0008-single-user-profile.md).
 - Migration support, extension availability, rollback behavior, and concurrent operations must be validated before this proposal is finalized.
 
 ## Revisit When

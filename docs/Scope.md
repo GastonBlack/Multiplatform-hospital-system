@@ -56,7 +56,9 @@ The main goals of the project are:
 
 Each actor authenticates through a `User` account associated with exactly one `Patient`, `Doctor`, or `Staff` profile in Version 1.
 
-`User` contains shared personal information, credentials, and `AccountStatus`. Each profile references its account through `UserId`.
+`User` contains shared personal information, credentials, `ProfileType`, and `AccountStatus`. ProfileType identifies Patient, Doctor, or Staff and must match the associated profile. Each profile references its account through `UserId`.
+
+Database constraints and deferred validation must prevent committing accounts with missing or multiple profiles. Account and profile creation occur in one transaction.
 
 Receptionist and Administrator are authorization roles represented by `StaffRole` on a `Staff` profile, not separate profile entities. Each Staff profile has exactly one StaffRole.
 

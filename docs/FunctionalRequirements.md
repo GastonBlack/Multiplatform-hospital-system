@@ -88,6 +88,8 @@ The system shall allow authenticated users to terminate their active session by 
 
 Every User account shall have exactly one Patient, Doctor, or Staff profile, linked through UserId.
 
+User.ProfileType shall identify Patient, Doctor, or Staff and match the associated profile. The system shall create the account and profile atomically and reject a transaction that would leave an existing User with no profile or multiple profiles, using the persistence design in [ADR-0008](adr/0008-single-user-profile.md).
+
 Patient and Doctor authorization roles correspond to their profile types. A Staff profile shall have exactly one StaffRole: Receptionist or Administrator. These Staff roles shall not be modeled as separate profile entities.
 
 Supported roles for Version 1 are:
