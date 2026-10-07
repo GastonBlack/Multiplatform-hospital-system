@@ -287,7 +287,9 @@ Doctor accounts shall only be created by authorized administrators.
 
 Public doctor registration shall not be supported.
 
-The Doctor profile shall contain UserId, EmployeeNumber, and MedicalLicenseNumber. EmployeeNumber shall identify at most one employee across Doctor and Staff profiles. Its ownership shall be centralized in EmployeeNumbers and match the profile's UserId. Account, number registration, and profile creation shall be atomic. The MedicalLicenseNumber uniqueness policy remains to be defined.
+The Doctor profile shall contain UserId, EmployeeNumber, and MedicalLicenseNumber. EmployeeNumber shall identify at most one employee across Doctor and Staff profiles. Its ownership shall be centralized in EmployeeNumbers and match the profile's UserId. Account, number registration, and profile creation shall be atomic.
+
+MedicalLicenseNumber shall be required and unique across all Doctor profiles, regardless of the associated User's AccountStatus. Version 1 assumes a single medical-license numbering system. Creation and updates shall reject duplicates; suspension or deactivation shall not release a number for reuse. PostgreSQL shall enforce this uniqueness independently of application checks.
 
 ---
 

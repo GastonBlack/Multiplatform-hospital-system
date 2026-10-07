@@ -56,7 +56,7 @@ erDiagram
         uuid UserId FK, UK
         text ProfileType FK "Fixed Doctor; composite FK with UserId"
         text EmployeeNumber FK, UK "Part of composite FK with UserId"
-        text MedicalLicenseNumber "Uniqueness policy pending"
+        text MedicalLicenseNumber UK "Required; retained when inactive"
     }
 
     Staff {
@@ -174,6 +174,8 @@ Subsequent account-status or role changes must not erase the verification record
 
 Doctor stores EmployeeNumber and MedicalLicenseNumber. Staff stores EmployeeNumber and StaffRole.
 
+MedicalLicenseNumber is required and unique across all Doctor rows through NOT NULL and an unconditional UNIQUE constraint, not an index filtered by account status. Suspended or Deactivated accounts retain their Doctor profile and number. Version 1 assumes a single medical-license numbering system; creation and updates must reject duplicate numbers.
+
 StaffRole accepts Receptionist or Administrator. No separate Receptionist, Administrator, or Employee table is introduced in Version 1.
 
 EmployeeNumbers centrally registers EmployeeNumber as its primary key and UserId as a required unique foreign key to User.Id. This gives each registered number one account owner and each account at most one registered number.
@@ -248,6 +250,7 @@ Version 1 does not introduce replacement appointment rows or a rescheduling-hist
 | EmployeeNumbers | EmployeeNumber primary key; required unique UserId referencing User.Id |
 | EmployeeNumbers | UNIQUE (EmployeeNumber, UserId) as the composite foreign-key target |
 | Doctor, Staff | Required unique EmployeeNumber and composite (EmployeeNumber, UserId) foreign key to EmployeeNumbers |
+| Doctor | Required MedicalLicenseNumber; unconditional UNIQUE (MedicalLicenseNumber) |
 | Staff | StaffRole restricted to Receptionist or Administrator |
 | DoctorSpecialty | Composite primary key (DoctorId, MedicalSpecialtyId) and both foreign keys |
 | DoctorAvailability | DoctorId foreign key and EndTime greater than StartTime |
@@ -308,7 +311,6 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 
 - Migration details, deferred-trigger behavior, and concurrency validation for the selected exactly-one-profile design.
 - EmployeeNumber normalization and generation policies.
-- MedicalLicenseNumber uniqueness policy.
 - Email and national-identification normalization policies.
 - Complete administrative AccountStatus transition policy.
 - Implementation and tests of ADR-0005 locks, stale-appointment checks, timestamp precision, and cross-table validation.

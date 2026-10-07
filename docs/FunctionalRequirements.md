@@ -313,7 +313,9 @@ Doctors shall not be able to register themselves publicly.
 
 The system shall maintain a Doctor profile linked to User through UserId, including EmployeeNumber and MedicalLicenseNumber.
 
-EmployeeNumber shall be unique across Doctor and Staff profiles, with number ownership centralized in the EmployeeNumbers registry. Account, number registration, and profile creation shall be atomic. The MedicalLicenseNumber uniqueness policy remains to be defined.
+EmployeeNumber shall be unique across Doctor and Staff profiles, with number ownership centralized in the EmployeeNumbers registry. Account, number registration, and profile creation shall be atomic.
+
+MedicalLicenseNumber shall be required and unique across all Doctor profiles, including those linked to Suspended or Deactivated accounts. Version 1 assumes a single medical-license numbering system. The system shall reject duplicate numbers when creating or updating a Doctor profile; account status changes shall not release the number for another profile.
 
 ---
 

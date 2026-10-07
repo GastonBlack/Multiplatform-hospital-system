@@ -96,6 +96,8 @@ A doctor is a medical professional registered in the platform.
 
 The Doctor profile contains `EmployeeNumber` and `MedicalLicenseNumber`.
 
+`MedicalLicenseNumber` is required and unique across all Doctor profiles, including those whose User account is Suspended or Deactivated. Version 1 assumes a single medical-license numbering system; account status changes do not release the number for another profile.
+
 Doctors will be able to:
 
 - authenticate into the system;
