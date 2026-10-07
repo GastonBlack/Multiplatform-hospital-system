@@ -95,7 +95,7 @@ Protected resources shall enforce authorization on the backend.
 
 Authorization shall be consistent with the User's single Patient, Doctor, or Staff profile and, for Staff, its StaffRole. AccountStatus shall be evaluated independently of patient identity verification.
 
-PendingVerification accounts shall receive only permitted access, including account information and verification instructions. Suspended and Deactivated accounts shall not perform protected operations.
+PendingVerification patient access shall be restricted to login, session refresh, logout, and read-only access to their own account/profile, account and identity-verification status, and verification instructions. Deny other protected patient operations; public specialty and doctor information remains accessible. Suspended and Deactivated accounts shall not perform protected operations.
 
 Client-side UI restrictions shall not be considered a security boundary.
 

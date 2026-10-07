@@ -130,7 +130,7 @@ A self-registered patient account starts in this state.
 
 The patient must complete in-person identity verification before booking or rescheduling appointments.
 
-This state must still allow the limited access required to view account information and verification instructions. It does not grant normal appointment-management permissions.
+This state allows login, session refresh, logout, and read-only access to the patient's own account/profile, account and identity-verification status, and verification instructions. All other protected patient operations, including profile updates and appointment management, are denied. Public specialty and doctor information remains accessible.
 
 ### Active
 
@@ -515,7 +515,6 @@ The following decisions must be resolved in subsequent design work:
 - EmployeeNumber normalization and generation policies;
 - the uniqueness policy for MedicalLicenseNumber;
 - the complete administrative AccountStatus transition policy;
-- the exact permissions available to PendingVerification accounts;
 - the persistence representation of doctor-specialty assignments;
 - how specialty assignment removal affects existing appointments;
 - implementation and PostgreSQL concurrency validation of the scheduling protocol in ADR-0005.

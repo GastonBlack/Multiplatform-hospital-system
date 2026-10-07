@@ -311,7 +311,6 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 - MedicalLicenseNumber uniqueness policy.
 - Email and national-identification normalization policies.
 - Complete administrative AccountStatus transition policy.
-- Exact permissions available to PendingVerification accounts.
 - Effect of specialty assignment removal on existing appointments.
 - Implementation and tests of ADR-0005 locks, stale-appointment checks, timestamp precision, and cross-table validation.
 - Migration details and concurrency tests for the selected exclusion constraints.

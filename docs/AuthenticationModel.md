@@ -77,12 +77,13 @@ Every protected request validates the JWT and reads the referenced session, its 
 
 Permissions use current User.ProfileType and StaffRole. A valid signature does not override suspension, deactivation, ownership, or patient verification rules. Cache data is not authoritative for these checks.
 
+PendingVerification patients may log in, refresh their session, log out, and read only their own account/profile, account and identity-verification status, and verification instructions. Deny all other protected patient operations, including profile updates and appointment management. Public specialty and doctor information remains accessible. Activation does not require a new login: subsequent checks use the current account status, while booking/rescheduling still require verified identity.
+
 Revocation applies to subsequent checks. A write already executing still needs its normal transaction and concurrency validation.
 
 ## 6. Implementation Decisions Still Required
 
 - Signing algorithm, trusted keys, key rotation, issuer, audience, and expiration clock-skew policy.
-- Exact PendingVerification endpoint permissions and allowed login/refresh behavior.
 - Web deployment origins, cookie scope/SameSite, CORS, and CSRF defenses for the proposed HttpOnly refresh cookie.
 - Mobile secure-storage library and web refresh coordination across tabs.
 - EF Core mappings, migration details, error handling, retention/cleanup execution, and concurrency tests.

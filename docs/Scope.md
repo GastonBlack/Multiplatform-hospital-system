@@ -191,7 +191,7 @@ User accounts may have states such as:
 
 Patient account verification and general account status are related but conceptually separate concerns.
 
-`PendingVerification` patients retain limited access to their account information and verification instructions. Their exact permissions remain to be defined.
+`PendingVerification` patients may log in, refresh their session, log out, and read their own account/profile, account and identity-verification status, and verification instructions. Other protected patient operations, including profile updates and appointment management, are unavailable until activation. Public specialty and doctor information remains accessible. Booking and rescheduling require verified identity and an Active account.
 
 A patient must have an active and identity-verified account before appointment booking or rescheduling functionality is enabled.
 

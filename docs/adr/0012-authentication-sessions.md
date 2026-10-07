@@ -52,7 +52,7 @@ Authentication owns these records. They are technical authentication persistence
 
 On every authenticated protected request, load the referenced session and current account/profile authorization data from PostgreSQL. Reject expired or revoked sessions, mismatched session ownership, and Suspended or Deactivated accounts.
 
-PendingVerification patients retain only permitted access. Exact endpoint permissions must be finalized against the existing requirements; a valid JWT does not enable booking or rescheduling for them.
+PendingVerification patients may log in, refresh their session, log out, and read only their own account/profile, account and identity-verification status, and verification instructions. Deny other protected patient operations, including profile updates and appointment management. Public specialty and doctor information remains accessible. Booking and rescheduling require verified identity and an Active account, evaluated from current data rather than JWT claims. Activation does not require replacing the existing session.
 
 Logout revokes the current session and removes its client credentials. Subsequent requests using its access token are rejected through the session check rather than waiting for JWT expiry. Requests already executing still require each write workflow's normal concurrency validation.
 
@@ -81,7 +81,7 @@ Use HTTPS and the Authorization bearer header for access tokens. Never place tok
 - Protected requests require database authorization reads; JWT authentication does not eliminate shared session state in this design.
 - Web access tokens remain exposed to malicious JavaScript while in memory; HttpOnly protects only the refresh cookie from direct JavaScript access. Cookie protection is not a replacement for preventing XSS or CSRF.
 - Refresh rotation and revocation require transactional tests, including concurrent refresh, reused tokens, lost responses, logout, expiry, suspension, and role changes.
-- Before implementation, finalize signing-key/issuer design, PendingVerification permissions, and client storage/deployment details. The referenced security documents inform this design; this ADR does not claim to implement a complete OAuth/OIDC flow.
+- Before implementation, finalize signing-key/issuer design and client storage/deployment details. The referenced security documents inform this design; this ADR does not claim to implement a complete OAuth/OIDC flow.
 
 ## Revisit When
 

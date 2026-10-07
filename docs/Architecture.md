@@ -210,7 +210,7 @@ User.ProfileType identifies the single associated profile type. It does not repl
 
 Authorization distinguishes Patient, Doctor, Receptionist, and Administrator. The two staff roles are derived from StaffRole, not separate profile tables.
 
-Protected operations must account for current account status. PendingVerification patients retain permitted account and verification-information access; booking and rescheduling require verified identity and an Active account. Suspended and Deactivated accounts cannot perform protected operations.
+Protected operations must account for current account status. PendingVerification patients may log in, refresh, log out, and read only their own account/profile, account and identity-verification status, and verification instructions. Deny other protected patient operations, including profile updates and appointment management. Public specialty and doctor information remains accessible. Booking and rescheduling require verified identity and an Active account. Suspended and Deactivated accounts cannot perform protected operations.
 
 JWT access tokens have a maximum 15-minute lifetime and identify User.Id through sub and a persistent authentication session through sid. Each login creates an independent session with an absolute 7-day expiry; refresh does not extend that deadline.
 
@@ -218,7 +218,7 @@ Every protected request validates the JWT and reads session ownership/state and 
 
 Refresh tokens are opaque random credentials, stored only as SHA-256 hashes and rotated atomically while locking the session row. Reuse of a consumed token revokes its session. Logout revokes the current session; suspension/deactivation atomically revokes the User's sessions, with new login required after reactivation.
 
-These records belong to Authentication and are defined in [AuthenticationModel.md](AuthenticationModel.md) and [ADR-0012](adr/0012-authentication-sessions.md). Web refresh-cookie storage remains proposed pending deployment/CSRF details; signing-key design and exact PendingVerification permissions remain to be finalized.
+These records belong to Authentication and are defined in [AuthenticationModel.md](AuthenticationModel.md) and [ADR-0012](adr/0012-authentication-sessions.md). Web refresh-cookie storage remains proposed pending deployment/CSRF details; signing-key design remains to be finalized.
 
 ---
 

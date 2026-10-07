@@ -122,7 +122,7 @@ Supported account statuses in Version 1 shall be:
 - `Suspended`
 - `Deactivated`
 
-PendingVerification patients shall retain limited access to their own account information and verification instructions. The exact permission policy remains to be defined.
+PendingVerification patients shall be allowed to log in, refresh their session, log out, and read their own account/profile, account and identity-verification status, and verification instructions. All other protected patient operations, including profile updates and appointment management, shall be denied while this status remains in effect. Public specialty and doctor information remains accessible without granting protected permissions.
 
 ---
 
@@ -211,6 +211,8 @@ An authenticated patient shall be able to view their own profile.
 ## FR-PAT-007 — Patient Profile Update
 
 A patient shall be able to modify profile information that the system allows patients to manage directly.
+
+This protected operation requires an Active account; PendingVerification access to the patient's own profile is read-only.
 
 Information considered sensitive or related to verified identity may require hospital staff intervention.
 

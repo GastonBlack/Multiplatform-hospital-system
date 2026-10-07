@@ -138,7 +138,7 @@ A deactivated account shall not be allowed to perform protected operations.
 
 The `PendingVerification` status shall primarily represent patient accounts that have not yet completed the required identity verification process.
 
-These patients shall retain limited access to their account information and verification instructions, without permission to book or reschedule appointments. The exact permission policy remains to be defined.
+These patients may log in, refresh their session, log out, and read only their own account/profile, account and identity-verification status, and verification instructions. All other protected patient operations, including profile updates and appointment management, shall be denied. Public specialty and doctor information remains accessible. Booking and rescheduling require verified identity and an Active account.
 
 ---
 
