@@ -315,6 +315,8 @@ The system shall maintain a Doctor profile linked to User through UserId, includ
 
 EmployeeNumber shall be unique across Doctor and Staff profiles, with number ownership centralized in the EmployeeNumbers registry. Account, number registration, and profile creation shall be atomic.
 
+The system shall assign EmployeeNumber automatically from the shared PostgreSQL sequence defined in [ADR-0007](adr/0007-employee-number-registry.md), using canonical EMP- plus at least six decimal digits. Clients shall not supply or edit it. Numbers shall not be reused after suspension/deactivation; sequence gaps are permitted. Only authorized hospital personnel shall receive employee numbers; public doctor data and patient responses shall omit them.
+
 MedicalLicenseNumber shall be required and unique across all Doctor profiles, including those linked to Suspended or Deactivated accounts. Version 1 assumes a single medical-license numbering system. The system shall reject duplicate numbers when creating or updating a Doctor profile; account status changes shall not release the number for another profile.
 
 ---
@@ -448,6 +450,8 @@ An administrator shall be able to create and manage User accounts with Staff pro
 Each Staff profile shall contain UserId, EmployeeNumber, and exactly one StaffRole. EmployeeNumber shall be unique across Doctor and Staff profiles.
 
 Account, EmployeeNumbers registration, and Staff profile creation shall be atomic. The registered number shall belong to the same User as the Staff profile.
+
+Staff registration shall use the same automatic numbering, visibility, immutability, and non-reuse policy as Doctor registration, defined in FR-DOC-002 and ADR-0007.
 
 ---
 

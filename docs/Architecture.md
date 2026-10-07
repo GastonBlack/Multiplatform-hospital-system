@@ -198,6 +198,8 @@ PostgreSQL exclusion constraints protect overlapping appointment and availabilit
 
 Global EmployeeNumber ownership is enforced through the EmployeeNumbers registry primary key and composite foreign keys from Doctor and Staff. Registry creation participates in the employee-registration transaction; it is not a separate domain module.
 
+Users allocates employee numbers from one PostgreSQL bigint sequence shared by Doctor and Staff under [ADR-0007](adr/0007-employee-number-registry.md), formatting canonical EMP- text with at least six digits. Numbers are immutable and not reused; allocation may leave gaps on rollback while account/profile/registry rows remain atomic. Response DTOs expose numbers only to authorized hospital personnel, excluding public doctor data and patient responses.
+
 Exactly-one-profile enforcement uses User.ProfileType, fixed profile-table discriminators, composite foreign keys, unique UserId, and initially deferred constraint triggers, as selected in [ADR-0008](adr/0008-single-user-profile.md). Registration services must handle validation failures at transaction commit; migrations and tests must verify the database behavior.
 
 The selected scheduling protocol and the locking/visibility details of profile mutations require implementation and PostgreSQL concurrency tests. Authentication operations must respect the User-before-session ordering when participating in account changes. The employee-number registry and shared DbContext do not replace these guarantees.

@@ -239,6 +239,8 @@ Verification status is determined from these attributes rather than a separate p
 
 `EmployeeNumber` must be unique across Doctor and Staff profiles. A technical `EmployeeNumbers` registry associates each number with one User account. Version 1 does not introduce a shared Employee domain entity.
 
+The system assigns immutable numbers automatically from a shared sequence in the format EMP-000001, with at least six digits. Gaps are allowed and numbers are not reused after suspension/deactivation. Employee numbers are internal and visible only to authorized hospital personnel; User.Id remains UUID.
+
 ---
 
 ### 5.4 Medical Specialty Management

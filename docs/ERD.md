@@ -184,7 +184,9 @@ Declare an additional UNIQUE (EmployeeNumber, UserId) key on EmployeeNumbers as 
 
 EmployeeNumber remains required and unique in each employee profile. The registry primary key enforces global number ownership, including concurrent registration attempts. Combined with the separate exactly-one-profile rule, a number identifies exactly one Doctor or Staff profile.
 
-Account, number registration, and employee profile creation must be committed together. Deactivation preserves the number registration. Number normalization and generation policies remain pending.
+Account, number registration, and employee profile creation must be committed together. Suspension/deactivation preserves the number registration; numbers are immutable and are not reused for another employee.
+
+[ADR-0007](adr/0007-employee-number-registry.md) defines automatic allocation from one PostgreSQL bigint sequence shared by Doctor and Staff, starting at 1, incrementing by 1, with NO CYCLE. Store canonical uppercase EMP- plus a decimal value padded to at least six digits (EMP-000001); retain all digits beyond six. The sequence is a database object, not another table or domain entity. Rollback may leave gaps without persisting partial registration rows. Clients do not supply numbers, and normal operation must not reset the sequence or recycle values.
 
 The registry does not, by itself, prevent a User from having both profile types or ensure every registry row has an employee profile. Profile exclusivity and existence are handled by ADR-0008; registration workflows must additionally avoid creating employee-number records for Patient accounts.
 
@@ -310,7 +312,6 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 ## 8. Decisions Still Required
 
 - Migration details, deferred-trigger behavior, and concurrency validation for the selected exactly-one-profile design.
-- EmployeeNumber normalization and generation policies.
 - Email and national-identification normalization policies.
 - Complete administrative AccountStatus transition policy.
 - Implementation and tests of ADR-0005 locks, stale-appointment checks, timestamp precision, and cross-table validation.

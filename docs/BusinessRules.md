@@ -706,6 +706,8 @@ Each Staff profile shall contain UserId, EmployeeNumber, and exactly one StaffRo
 
 EmployeeNumbers shall register the number for the same User as the Staff profile. Account, number registration, and profile creation shall be atomic. Account deactivation shall not release the number registration.
 
+Doctor and Staff registration shall share the PostgreSQL sequence defined in [ADR-0007](adr/0007-employee-number-registry.md). The system shall assign immutable canonical EMP- numbers with at least six decimal digits, without manual input or reuse after suspension/deactivation. Rollback may consume a sequence value but shall not leave partial registration records. Gaps are acceptable. Employee numbers shall be visible only to authorized hospital personnel and omitted from public doctor data and patient responses.
+
 ---
 
 ## BR-ADM-004 — Account Status Management

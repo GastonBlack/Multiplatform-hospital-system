@@ -280,6 +280,8 @@ Version 1 does not introduce a shared Employee entity.
 
 Doctor and Staff each contain EmployeeNumber.
 
+The system assigns this immutable internal number automatically from a shared sequence, using EMP- followed by at least six decimal digits (for example, EMP-000001). Numbers are not reused after suspension or deactivation; gaps are allowed. Only authorized hospital personnel may see them. User.Id remains UUID and is independent of this numbering.
+
 Global EmployeeNumber ownership is centralized in a technical EmployeeNumbers registry at the persistence layer, as documented in the [ERD](ERD.md) and [ADR-0007](adr/0007-employee-number-registry.md). This does not introduce an Employee domain entity or change the profile attributes.
 
 ---
@@ -514,7 +516,6 @@ A User may verify multiple patients if authorized as a receptionist when perform
 The following decisions must be resolved in subsequent design work:
 
 - implementation and concurrency validation of the exactly-one-profile persistence design in ADR-0008;
-- EmployeeNumber normalization and generation policies;
 - the complete administrative AccountStatus transition policy;
 - the persistence representation of doctor-specialty assignments;
 - implementation and PostgreSQL concurrency validation of the scheduling protocol in ADR-0005.
