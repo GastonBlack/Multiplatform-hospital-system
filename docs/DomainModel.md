@@ -143,20 +143,31 @@ For patients, booking and rescheduling additionally require successful identity 
 
 The account cannot perform protected operations.
 
-Suspension does not remove the profile or its stored information.
+Suspension is a temporary access block. It does not remove the profile or its stored information.
 
 ### Deactivated
 
 The account cannot perform protected operations.
 
-Deactivation does not imply deletion of historical information.
+Deactivation is an administrative account closure. It does not delete the account, profile, identifiers, verification record, or appointment history; an administrator may reactivate an eligible account.
 
 ### State Rules
 
-- Successful identity verification allows an eligible patient account to transition from PendingVerification to Active.
+- Only an authorized receptionist may activate a PendingVerification patient after successful in-person identity verification.
 - Identity verification does not automatically reactivate a Suspended or Deactivated account.
-- Administrative account-status changes must respect patient verification requirements.
-- The complete administrative transition policy remains to be defined.
+- Only an authorized administrator may suspend, deactivate, or reactivate an account. A patient may return to Active only if already identity-verified.
+- Suspension/deactivation revokes the User's sessions atomically with the status change. Reactivation requires a new login and does not restore revoked sessions.
+- Persisted accounts and their associated profiles are never physically deleted through application account-management operations. Status changes preserve identifiers, verification records, and appointment history.
+
+| Current status | Target status | Authorized actor and condition |
+| --- | --- | --- |
+| PendingVerification | Active | Receptionist, after in-person patient verification |
+| PendingVerification or Active | Suspended or Deactivated | Administrator |
+| Suspended | Deactivated | Administrator |
+| Deactivated | Suspended | Administrator |
+| Suspended or Deactivated | Active | Administrator; patients must already be verified |
+
+Transitions not listed are rejected. No workflow returns an account to PendingVerification. Validate the current state and actor permissions under the ADR-0005 transaction/lock protocol before applying a change.
 
 ---
 
@@ -519,7 +530,6 @@ A User may verify multiple patients if authorized as a receptionist when perform
 The following decisions must be resolved in subsequent design work:
 
 - implementation and concurrency validation of the exactly-one-profile persistence design in ADR-0008;
-- the complete administrative AccountStatus transition policy;
 - the persistence representation of doctor-specialty assignments;
 - implementation and PostgreSQL concurrency validation of the scheduling protocol in ADR-0005.
 

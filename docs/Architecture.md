@@ -222,6 +222,8 @@ Authorization distinguishes Patient, Doctor, Receptionist, and Administrator. Th
 
 Protected operations must account for current account status. PendingVerification patients may log in, refresh, log out, and read only their own account/profile, account and identity-verification status, and verification instructions. Deny other protected patient operations, including profile updates and appointment management. Public specialty and doctor information remains accessible. Booking and rescheduling require verified identity and an Active account. Suspended and Deactivated accounts cannot perform protected operations.
 
+Patients coordinates receptionist-only initial activation after in-person verification. Users owns administrator-managed suspension, deactivation, and reactivation under the [Domain Model transition rules](DomainModel.md#state-rules); patient reactivation requires completed verification. All status mutations validate current permissions/state under ADR-0005. Account management provides status changes rather than physical deletion of persisted accounts/profiles, preserving their identifiers, verification records, employee registrations, and appointment history.
+
 JWT access tokens have a maximum 15-minute lifetime and identify User.Id through sub and a persistent authentication session through sid. Each login creates an independent session with an absolute 7-day expiry; refresh does not extend that deadline.
 
 Every protected request validates the JWT and reads session ownership/state and current account/profile permissions from PostgreSQL. Role claims do not replace current AccountStatus, ProfileType, StaffRole, ownership, or patient eligibility checks.

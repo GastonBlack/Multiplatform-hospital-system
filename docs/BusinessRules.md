@@ -724,7 +724,11 @@ Doctor and Staff registration shall share the PostgreSQL sequence defined in [AD
 
 Authorized administrators may manage eligible account statuses according to system rules.
 
-Administrative status changes shall respect patient verification requirements. The complete status-transition policy remains to be defined.
+Only an authorized receptionist shall activate a PendingVerification patient after successful in-person verification. Administrators shall not bypass this initial verification/activation workflow.
+
+An authorized administrator may change PendingVerification or Active to Suspended or Deactivated, change Suspended to Deactivated or Deactivated to Suspended, and reactivate Suspended or Deactivated as Active. Patient reactivation requires completed identity verification. Verification of a blocked patient shall not itself reactivate the account; an administrator must perform reactivation separately. No transition shall return an account to PendingVerification; other transitions shall be rejected.
+
+Suspended represents a temporary block and Deactivated an administrative account closure. Both deny protected operations and atomically revoke sessions; reactivation requires new login without restoring revoked sessions. Account-management operations shall never physically delete a persisted User or its profile. Preserve identifiers, employee registrations, patient verification records, and appointment history. Validate current state and permissions within the ADR-0005 transaction and lock protocol.
 
 ---
 

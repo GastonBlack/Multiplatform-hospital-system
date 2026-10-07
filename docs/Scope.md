@@ -183,6 +183,8 @@ Version 1 will include the following functionality.
 - Role-based authorization.
 - Account status management.
 - Account activation and deactivation.
+- Receptionist-only initial patient activation after verification; administrator-managed suspension, deactivation, and eligible reactivation. Patient reactivation requires completed identity verification and a new login.
+- Account closure through status changes, preserving persisted accounts, profiles, identifiers, verification records, and appointment history; no physical account/profile deletion through account-management operations.
 - Protected API endpoints.
 - Authentication support for web and mobile clients.
 

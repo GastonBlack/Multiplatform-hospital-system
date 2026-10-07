@@ -270,7 +270,9 @@ Version 1 does not introduce replacement appointment rows or a rescheduling-hist
 | Appointment | Status restricted to Scheduled, Cancelled, or Completed; initial status Scheduled |
 | Appointment | Nullable CancellationReason; the interruption-cancellation use case requires a patient-visible reason |
 
-Foreign keys should restrict deletion of referenced rows rather than cascade-delete appointment history or verification actors. Account deactivation is a status change, not deletion.
+Foreign keys should restrict deletion of referenced rows rather than cascade-delete appointment history or verification actors. Application account-management operations must never physically delete persisted User/profile rows. Suspension and deactivation are status changes that preserve identifiers, employee registrations, verification records, and appointment history.
+
+The AccountStatus transition table in [DomainModel.md](DomainModel.md#state-rules) and BR-ADM-004 defines permitted changes: initial patient activation is receptionist-only after verification; suspension, deactivation, and reactivation are administrator-only. Patient reactivation requires completed verification. Validate current state and actor permissions under ADR-0005; suspension/deactivation and session revocation commit atomically. Reactivation does not restore old sessions or return an account to PendingVerification.
 
 Valid enum values alone do not enforce state transitions. Authorization, permitted transitions, future timing, patient verification, doctor-specialty membership, and availability containment require additional transactional validation.
 
@@ -320,7 +322,6 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 ## 8. Decisions Still Required
 
 - Migration details, deferred-trigger behavior, and concurrency validation for the selected exactly-one-profile design.
-- Complete administrative AccountStatus transition policy.
 - Implementation and tests of ADR-0005 locks, stale-appointment checks, timestamp precision, and cross-table validation.
 - Migration details and concurrency tests for the selected exclusion constraints.
 

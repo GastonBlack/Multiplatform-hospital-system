@@ -277,7 +277,7 @@ Both attributes shall be absent before verification and present after successful
 
 ## FR-VER-005 — Account Activation
 
-After successful identity verification, the system shall allow an eligible patient's User account to transition from `PendingVerification` to `Active`.
+After successful in-person identity verification, the system shall allow only an authorized receptionist to transition an eligible patient's User account from `PendingVerification` to `Active`.
 
 Verification shall not automatically reactivate a `Suspended` or `Deactivated` account.
 
@@ -467,7 +467,9 @@ Staff registration shall use the same automatic numbering, visibility, immutabil
 
 An administrator shall be able to change the status of eligible user accounts.
 
-Administrative status changes shall respect patient verification requirements. The complete status-transition policy remains to be defined.
+The system shall enforce BR-ADM-004: administrators may suspend/deactivate PendingVerification or Active accounts, change between Suspended and Deactivated, and reactivate eligible Suspended or Deactivated accounts to Active. Patient reactivation shall require completed identity verification; only receptionists shall perform the initial PendingVerification-to-Active activation after verification. The system shall reject other transitions, including a return to PendingVerification.
+
+Suspension/deactivation shall revoke sessions atomically; reactivation shall require new login. Account-management operations shall not physically delete persisted accounts or profiles and shall preserve identifiers, verification records, employee registrations, and appointment history. Validate status transitions using current state and actor permissions under the ADR-0005 transaction and locks.
 
 ---
 
