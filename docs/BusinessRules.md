@@ -724,6 +724,8 @@ Only authorized administrators shall create or administratively modify medical s
 
 Only authorized administrators shall assign or remove medical specialties from doctors.
 
+Removal shall be rejected while the DoctorId and MedicalSpecialtyId pair has future Scheduled appointments. Reception shall cancel affected appointments first with a patient-visible reason and the existing in-app guidance; removal shall not automatically cancel appointments. Cancelled, Completed, and past appointments shall remain unchanged and shall not block removal. The check and association deletion shall share the transaction and locks defined in [ADR-0005](adr/0005-scheduling-concurrency.md).
+
 ---
 
 # 13. Concurrency Rules

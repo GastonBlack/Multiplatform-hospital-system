@@ -230,6 +230,7 @@ Doctor represents a hospital physician who provides appointments and manages ava
 - Public doctor registration is not supported.
 - EmployeeNumber identifies an employee across both Doctor and Staff profiles.
 - The same specialty cannot be assigned to a doctor more than once.
+- An assignment cannot be removed while the doctor has future Scheduled appointments for that specialty. Reception must cancel affected appointments first with a patient-visible reason and the existing in-app guidance. Removal preserves historical appointments and does not automatically cancel any appointment.
 - Doctors manage their own availability and appointments according to authorization rules.
 - Doctors may access the basic patient information required for appointments assigned to them.
 
@@ -516,7 +517,6 @@ The following decisions must be resolved in subsequent design work:
 - the uniqueness policy for MedicalLicenseNumber;
 - the complete administrative AccountStatus transition policy;
 - the persistence representation of doctor-specialty assignments;
-- how specialty assignment removal affects existing appointments;
 - implementation and PostgreSQL concurrency validation of the scheduling protocol in ADR-0005.
 
 These are open design decisions, not implemented guarantees.

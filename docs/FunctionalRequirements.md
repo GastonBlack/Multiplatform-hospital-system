@@ -473,6 +473,8 @@ An administrator shall be able to assign medical specialties to doctors.
 
 An administrator shall be able to remove a medical specialty assignment from a doctor.
 
+The system shall reject removal while that doctor has future Scheduled appointments for that specialty, leaving the assignment unchanged. Reception shall cancel the affected appointments first, recording a patient-visible reason and the existing in-app guidance. Cancelled, Completed, and past appointments shall be preserved and shall not block removal. Validation and removal shall occur within the coordinated transaction in [ADR-0005](adr/0005-scheduling-concurrency.md).
+
 ---
 
 ## FR-ADM-007 — Doctor Information Management

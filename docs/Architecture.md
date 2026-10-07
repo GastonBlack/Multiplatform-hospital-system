@@ -111,6 +111,8 @@ Both patient clients display cancellation information and next-step instructions
 
 DoctorSpecialty belongs to Doctors as a persistence association with MedicalSpecialties. Appointment retains separate DoctorId and MedicalSpecialtyId references.
 
+Doctors rejects assignment removal while the doctor has future Scheduled appointments for that specialty. The coordinating use case obtains the blocking-appointment check through Appointments within the ADR-0005 transaction and locks. Reception cancels affected appointments first with a patient-visible reason and the existing in-app guidance; assignment removal does not cancel appointments or delete their history.
+
 Patient verification is a Patients use case, restricted to authorized receptionists. Administration is an actor capability expressed through authorized endpoints in the relevant modules, rather than a second owner of their data.
 
 Bookable-slot calculation belongs to Appointments because it combines availability periods with occupied appointment intervals. Availability supplies the periods; Appointments supplies the occupied intervals and performs scheduling operations.

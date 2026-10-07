@@ -231,6 +231,7 @@ Verification status is determined from these attributes rather than a separate p
 - Doctor profile management.
 - Doctor activation and deactivation.
 - Medical specialty assignment.
+- Specialty assignment removal only when the doctor has no future Scheduled appointments for that specialty; reception must cancel affected appointments first with a patient-visible reason and the existing in-app guidance. Historical appointments are preserved.
 - Doctor search and filtering.
 - Doctor schedule access.
 

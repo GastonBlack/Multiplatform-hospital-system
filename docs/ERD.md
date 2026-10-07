@@ -198,7 +198,7 @@ It has no independent Id and is not a separate domain entity in Version 1.
 
 Appointment references Doctor and MedicalSpecialty directly, not DoctorSpecialty. Booking and rescheduling must validate the assignment against authoritative data.
 
-No composite foreign key from Appointment to DoctorSpecialty is proposed: removing an assignment must not implicitly delete historical appointments. The policy for removing assignments that affect existing Scheduled appointments remains pending.
+No composite foreign key from Appointment to DoctorSpecialty is proposed: removing an assignment must not implicitly delete historical appointments. Reject removal while the DoctorId and MedicalSpecialtyId pair has future Scheduled appointments. Reception must cancel affected appointments first with a patient-visible reason and the existing in-app guidance. Cancelled, Completed, and past appointments do not block removal and remain unchanged. Check for blocking appointments and delete the association in one transaction under the ADR-0005 lock protocol.
 
 ### 4.5 DoctorAvailability
 
@@ -311,7 +311,6 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 - MedicalLicenseNumber uniqueness policy.
 - Email and national-identification normalization policies.
 - Complete administrative AccountStatus transition policy.
-- Effect of specialty assignment removal on existing appointments.
 - Implementation and tests of ADR-0005 locks, stale-appointment checks, timestamp precision, and cross-table validation.
 - Migration details and concurrency tests for the selected exclusion constraints.
 
