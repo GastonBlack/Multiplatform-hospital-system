@@ -164,7 +164,9 @@ See [ADR-0008](adr/0008-single-user-profile.md). This is the selected enforcemen
 
 Patient.NationalIdentificationNumber stores only Uruguayan cédulas de identidad in Version 1, including the supplied check digit. NormalizeNationalIdentificationNumber removes presentation whitespace, dots, and hyphens and rejects other non-digit characters. Persist the remaining digits as text without losing leading zeros or the final check digit; 1 234 324 1 becomes 12343241. All registration paths and permitted identity-number changes/lookups use this same policy. UNIQUE (NationalIdentificationNumber) protects canonical values against duplicate and concurrent registration.
 
-Version 1 preserves the supplied check digit without calculating or validating its checksum; no checksum constraint is required. Normalization and retention of the check digit do not establish identity verification, which remains an in-person receptionist workflow. Accepted lengths remain a separate implementation-policy decision.
+After removing presentation separators, require exactly eight ASCII digits (0–9), including the supplied check digit. Reject other lengths with guidance to enter the complete cédula, including any leading zero and the check digit; never pad, infer missing digits, or truncate the input. Persist the value with NOT NULL and CHECK (NationalIdentificationNumber ~ '^[0-9]{8}$'), alongside its unconditional UNIQUE constraint.
+
+Version 1 preserves the supplied check digit without calculating or validating its checksum; no checksum constraint is required. Normalization and retention of the check digit do not establish identity verification, which remains an in-person receptionist workflow.
 
 IdentityVerifiedAt and IdentityVerifiedByUserId are nullable together before verification and populated together afterward.
 
@@ -252,7 +254,7 @@ Version 1 does not introduce replacement appointment rows or a rescheduling-hist
 | Patient, Doctor, Staff | Required unique UserId and required ProfileType fixed to the table's type |
 | Patient, Doctor, Staff | Immediate composite (UserId, ProfileType) foreign key to User |
 | User, Patient, Doctor, Staff | Initially deferred constraint triggers requiring exactly one matching profile for each affected, still-existing User |
-| Patient | Unique canonical NationalIdentificationNumber containing Uruguayan CI digits including the supplied check digit |
+| Patient | Required unique NationalIdentificationNumber; CHECK requiring exactly eight ASCII digits, including the supplied check digit |
 | Patient | Verification fields both absent or both populated |
 | Patient | Nullable IdentityVerifiedByUserId referencing User.Id |
 | EmployeeNumbers | EmployeeNumber primary key; required unique UserId referencing User.Id |
@@ -318,7 +320,6 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 ## 8. Decisions Still Required
 
 - Migration details, deferred-trigger behavior, and concurrency validation for the selected exactly-one-profile design.
-- Accepted Uruguayan CI lengths.
 - Complete administrative AccountStatus transition policy.
 - Implementation and tests of ADR-0005 locks, stale-appointment checks, timestamp precision, and cross-table validation.
 - Migration details and concurrency tests for the selected exclusion constraints.

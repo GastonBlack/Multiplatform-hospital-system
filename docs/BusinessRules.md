@@ -185,7 +185,9 @@ A national identification number shall identify at most one patient within the s
 
 Version 1 shall accept only Uruguayan cédulas de identidad, including the supplied check digit. A dedicated NormalizeNationalIdentificationNumber operation shall remove whitespace, dots, and hyphens used as presentation separators; reject other non-digit characters rather than silently removing them. Store the remaining digits as text, preserving leading zeros and the final check digit. For example, 1 234 324 1 and 1.234.324-1 both normalize to 12343241.
 
-Use the same normalization for public self-registration, receptionist registration, and any permitted identity-number change or lookup. PostgreSQL shall enforce uniqueness of the canonical Patient.NationalIdentificationNumber. Version 1 shall preserve the supplied check digit without calculating or validating its checksum. Formatting or retaining the check digit shall not mark the patient's identity as verified; in-person verification remains required. Accepted lengths remain to be specified separately.
+After removing presentation separators, require exactly eight ASCII digits (0–9), including the check digit supplied by the person entering the document. Reject shorter or longer values and ask for the complete cédula, including any leading zero and the check digit. Do not add zeros, infer missing digits, or truncate the input.
+
+Use the same normalization and eight-digit validation for public self-registration, receptionist registration, and any permitted identity-number change or lookup. PostgreSQL shall enforce uniqueness and the eight-digit storage format of Patient.NationalIdentificationNumber. Version 1 shall preserve the supplied check digit without calculating or validating its checksum. Formatting or retaining the check digit shall not mark the patient's identity as verified; in-person verification remains required.
 
 ---
 

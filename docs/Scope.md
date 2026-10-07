@@ -88,6 +88,8 @@ Newly registered patient accounts will initially remain in a `PendingVerificatio
 
 Version 1 accepts only Uruguayan cédulas de identidad including the supplied check digit. Store their digits as unique text values, preserving leading zeros and the final digit; presentation spaces, dots, and hyphens are removed. For example, 1 234 324 1 is stored as 12343241. Version 1 does not calculate or validate the check-digit checksum. This format does not replace in-person identity verification.
 
+The normalized cédula must contain exactly eight ASCII digits, including the supplied check digit. Invalid lengths block registration or a permitted document change and display guidance to enter the complete document, including any leading zero. The system does not automatically add or infer missing digits.
+
 Before being allowed to book or reschedule appointments, patients must visit the hospital in person and complete an identity verification process with an authorized receptionist.
 
 After successful verification, the receptionist may activate an eligible `PendingVerification` account. Verification does not automatically reactivate a suspended or deactivated account.

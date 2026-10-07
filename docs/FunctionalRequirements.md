@@ -206,6 +206,8 @@ The system shall prevent multiple patient records from using the same national i
 
 Version 1 shall accept only Uruguayan cédulas de identidad including the supplied check digit. All registration paths and permitted identity-number changes/lookups shall use NormalizeNationalIdentificationNumber as defined in BR-PAT-002: remove presentation whitespace, dots, and hyphens, reject other non-digit characters, and preserve leading zeros and the final check digit. Store the canonical digit string as text and enforce uniqueness in PostgreSQL. Version 1 shall not calculate or validate the check-digit checksum. Format validation shall not replace receptionist identity verification.
 
+The normalized input shall contain exactly eight ASCII digits (0–9), including the supplied check digit. The system shall reject any other length and request the complete cédula, including any leading zero and the check digit, rather than automatically padding or truncating it. Public and receptionist registration and permitted identity-number changes shall not persist invalid values.
+
 ---
 
 ## FR-PAT-006 — Patient Profile

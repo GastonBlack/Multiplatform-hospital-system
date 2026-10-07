@@ -202,6 +202,8 @@ Users owns the dedicated NormalizeEmail policy used for account creation, permit
 
 Patients owns NormalizeNationalIdentificationNumber for Uruguayan CI values including the supplied check digit. Public and receptionist registration, plus permitted identity-number changes/lookups, remove presentation whitespace, dots, and hyphens, reject other non-digit characters, and preserve leading zeros and the final digit in canonical text. PostgreSQL enforces uniqueness of that value. This policy is separate from email normalization and receptionist identity verification.
 
+After normalization, Patients requires exactly eight ASCII digits, including the supplied check digit, and rejects other lengths with complete-document guidance. No automatic zero-padding or missing-digit inference is performed. Persistence mappings enforce the required eight-digit format alongside uniqueness.
+
 Users allocates employee numbers from one PostgreSQL bigint sequence shared by Doctor and Staff under [ADR-0007](adr/0007-employee-number-registry.md), formatting canonical EMP- text with at least six digits. Numbers are immutable and not reused; allocation may leave gaps on rollback while account/profile/registry rows remain atomic. Response DTOs expose numbers only to authorized hospital personnel, excluding public doctor data and patient responses.
 
 Exactly-one-profile enforcement uses User.ProfileType, fixed profile-table discriminators, composite foreign keys, unique UserId, and initially deferred constraint triggers, as selected in [ADR-0008](adr/0008-single-user-profile.md). Registration services must handle validation failures at transaction commit; migrations and tests must verify the database behavior.
