@@ -86,6 +86,8 @@ Patients will be able to:
 
 Newly registered patient accounts will initially remain in a `PendingVerification` state.
 
+Version 1 accepts only Uruguayan cédulas de identidad including the supplied check digit. Store their digits as unique text values, preserving leading zeros and the final digit; presentation spaces, dots, and hyphens are removed. For example, 1 234 324 1 is stored as 12343241. This format does not replace in-person identity verification.
+
 Before being allowed to book or reschedule appointments, patients must visit the hospital in person and complete an identity verification process with an authorized receptionist.
 
 After successful verification, the receptionist may activate an eligible `PendingVerification` account. Verification does not automatically reactivate a suspended or deactivated account.

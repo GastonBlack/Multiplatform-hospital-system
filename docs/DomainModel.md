@@ -187,6 +187,7 @@ Authentication and shared personal information belong to the associated User.
 ### Invariants
 
 - NationalIdentificationNumber identifies at most one Patient.
+- Version 1 uses only Uruguayan cédulas de identidad, including the supplied check digit. Store normalized digits as text, removing presentation whitespace, dots, and hyphens while preserving leading zeros and the final digit. Reject other non-digit characters. All registration paths and permitted identity-number changes/lookups use the same dedicated normalization policy.
 - IdentityVerifiedAt and IdentityVerifiedByUserId are both absent before verification.
 - Both verification attributes are present after successful verification.
 - The verification actor must be an authorized receptionist at the time of verification.

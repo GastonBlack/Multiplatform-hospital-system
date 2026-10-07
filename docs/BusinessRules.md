@@ -183,6 +183,10 @@ A patient created through public self-registration shall initially have a `Pendi
 
 A national identification number shall identify at most one patient within the system.
 
+Version 1 shall accept only Uruguayan cédulas de identidad, including the supplied check digit. A dedicated NormalizeNationalIdentificationNumber operation shall remove whitespace, dots, and hyphens used as presentation separators; reject other non-digit characters rather than silently removing them. Store the remaining digits as text, preserving leading zeros and the final check digit. For example, 1 234 324 1 and 1.234.324-1 both normalize to 12343241.
+
+Use the same normalization for public self-registration, receptionist registration, and any permitted identity-number change or lookup. PostgreSQL shall enforce uniqueness of the canonical Patient.NationalIdentificationNumber. Formatting or retaining the check digit shall not mark the patient's identity as verified; in-person verification remains required. Automatic check-digit validation and accepted lengths remain to be specified separately.
+
 ---
 
 ## BR-PAT-003 — Appointment Access Requirement
