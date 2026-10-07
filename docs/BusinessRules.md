@@ -734,6 +734,8 @@ Appointment booking consistency shall not depend exclusively on application-leve
 
 The persistence layer shall provide sufficient protection to prevent conflicting bookings under concurrent requests.
 
+Scheduling writes and conflicting eligibility, availability, or assignment mutations shall follow the transaction and row-lock protocol in [ADR-0005](adr/0005-scheduling-concurrency.md), validating current data after locking. Appointment mutations shall reject stale expected UpdatedAt values and persist a strictly newer UpdatedAt on success. Availability changes shall not invalidate existing Scheduled appointments.
+
 ---
 
 ## BR-CON-002 — Multiple API Instances

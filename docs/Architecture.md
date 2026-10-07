@@ -166,7 +166,7 @@ For example:
 - Doctors validates specialty assignments through MedicalSpecialties.
 - Appointments obtains patient eligibility, doctor-specialty assignment, and availability through their owning modules.
 
-Mutually dependent workflows, such as booking versus availability changes, must not produce service-call cycles. Their coordinating contract and transaction strategy will be defined when concurrency design is finalized.
+Mutually dependent workflows, such as booking versus availability changes, must not produce service-call cycles. The coordinating use case owns the transaction; supporting services follow the shared lock order in [ADR-0005](adr/0005-scheduling-concurrency.md). Concrete service contracts remain implementation work.
 
 Shared technical infrastructure must not become a container for business logic that has a clear module owner.
 
@@ -190,13 +190,15 @@ Rescheduling updates the existing Appointment's StartTime, EndTime, and UpdatedA
 
 Cross-module reads involved in a write must use authoritative data and the transaction/locking strategy chosen for that workflow. Reading valid data before a transaction is not sufficient if another request can change it before the write completes.
 
-The ERD proposes PostgreSQL exclusion constraints for overlapping appointment and availability intervals. These protect interval conflicts; they do not replace the additional checks for patient eligibility, doctor-specialty membership, or availability containment.
+Scheduling uses READ COMMITTED transactions and the ADR-0005 lock order: affected User rows, MedicalSpecialty rows, Doctor rows, then existing Appointment rows, sorting Ids within each table. Eligibility reads use shared parent-row locks; eligibility mutations use exclusive locks. Every appointment, availability, or assignment mutation exclusively locks its Doctor row. Services reload current data after locking before validating and writing.
+
+PostgreSQL exclusion constraints protect overlapping appointment and availability intervals. These do not replace patient eligibility, doctor-specialty membership, or availability containment checks. Appointment mutation requests supply the expected UpdatedAt; stale values are rejected and successful mutations persist a strictly newer value at database precision.
 
 Global EmployeeNumber ownership is enforced through the EmployeeNumbers registry primary key and composite foreign keys from Doctor and Staff. Registry creation participates in the employee-registration transaction; it is not a separate domain module.
 
 Exactly-one-profile enforcement uses User.ProfileType, fixed profile-table discriminators, composite foreign keys, unique UserId, and initially deferred constraint triggers, as selected in [ADR-0008](adr/0008-single-user-profile.md). Registration services must handle validation failures at transaction commit; migrations and tests must verify the database behavior.
 
-Coordinated scheduling concurrency and the locking/visibility details of profile mutations still require implementation design and validation. The employee-number registry and shared DbContext do not replace these guarantees.
+The selected scheduling protocol and the locking/visibility details of profile mutations require implementation and PostgreSQL concurrency tests. Authentication operations must respect the User-before-session ordering when participating in account changes. The employee-number registry and shared DbContext do not replace these guarantees.
 
 ---
 

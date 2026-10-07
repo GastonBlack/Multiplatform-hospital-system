@@ -482,7 +482,7 @@ Conflicting bookings must be prevented even when requests are processed simultan
 
 Checking availability before insertion is not sufficient by itself.
 
-PostgreSQL is the authoritative store for appointment consistency. The exact constraint, transaction, and concurrency strategy will be defined during persistence design.
+PostgreSQL is the authoritative store for appointment consistency. [ADR-0005](adr/0005-scheduling-concurrency.md) selects transactions, coordinated row locks, and exclusion constraints. Writes reload current eligibility and scheduling data after locking. Appointment mutations reject an outdated expected UpdatedAt; successful changes persist a strictly newer value. Availability edits must preserve coverage of existing Scheduled appointments.
 
 Redis is not the authority for booking validity.
 
@@ -518,8 +518,7 @@ The following decisions must be resolved in subsequent design work:
 - the exact permissions available to PendingVerification accounts;
 - the persistence representation of doctor-specialty assignments;
 - how specialty assignment removal affects existing appointments;
-- the concurrency protocol for simultaneous changes to the same appointment;
-- the PostgreSQL strategy for preventing concurrent overlapping bookings.
+- implementation and PostgreSQL concurrency validation of the scheduling protocol in ADR-0005.
 
 These are open design decisions, not implemented guarantees.
 

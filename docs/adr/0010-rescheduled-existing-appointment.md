@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Version 1. The detailed concurrency protocol still requires implementation design and testing.
+Accepted for Version 1. ADR-0005 defines the concurrency protocol; implementation and PostgreSQL testing remain required.
 
 ## Context
 
@@ -25,7 +25,7 @@ The old interval is released and the new interval reserved as one committed chan
 
 This workflow changes time only. Changing the patient, doctor, or specialty is outside this rescheduling operation.
 
-Coordinate concurrent changes to the same appointment, including another rescheduling, cancellation, or completion. The implementation must validate current state within its concurrency protocol rather than writing over stale data. Its locking or concurrency-check mechanism remains to be selected.
+Coordinate concurrent changes to the same appointment, including another rescheduling, cancellation, or completion, through the ordered row locks in [ADR-0005](0005-scheduling-concurrency.md). Reload the locked appointment and compare the request's expected UpdatedAt before validating or mutating it. Reject stale requests; successful changes must persist a strictly newer UpdatedAt at database precision.
 
 Version 1 retains the current interval and UpdatedAt, not a full history of previous intervals. Appointment history still means past appointments; it does not imply a rescheduling audit trail.
 

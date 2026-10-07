@@ -226,7 +226,7 @@ An inactive specialty or non-Active doctor account blocks new booking and resche
 
 Rescheduling updates StartTime, EndTime, and UpdatedAt on the existing row inside one transaction. Id, PatientId, DoctorId, MedicalSpecialtyId, CreatedAt, and Scheduled status remain unchanged. If validation or persistence fails, roll back and preserve the original row unchanged.
 
-Exclude this row from its own application-level conflict check. The appointment exclusion constraint applies to interval updates as well as inserts. Coordination of simultaneous updates to the same appointment still requires a concurrency protocol.
+Exclude this row from its own application-level conflict check. The appointment exclusion constraint applies to interval updates as well as inserts. [ADR-0005](adr/0005-scheduling-concurrency.md) coordinates updates through Doctor/Appointment row locks and an expected UpdatedAt check; successful mutations persist a strictly newer timestamp at database precision.
 
 Version 1 does not introduce replacement appointment rows or a rescheduling-history table. See [ADR-0010](adr/0010-rescheduled-existing-appointment.md).
 
@@ -265,17 +265,19 @@ Valid enum values alone do not enforce state transitions. Authorization, permitt
 
 ## 6. Scheduling Concurrency
 
-The proposed PostgreSQL approach is an exclusion constraint combining DoctorId equality and overlapping timestamp ranges.
+The selected PostgreSQL approach is an exclusion constraint combining DoctorId equality and overlapping timestamp ranges.
 
 For Appointment, the constraint applies only to rows with Status = Scheduled. For DoctorAvailability, it applies to all availability periods.
 
 Use half-open intervals [StartTime, EndTime), allowing adjacent intervals such as 09:00–09:30 and 09:30–10:00 without treating them as overlapping.
 
-The proposed implementation uses PostgreSQL tstzrange with a GiST exclusion constraint and the btree_gist extension for UUID equality. This must be confirmed during migration design and tested with simultaneous requests against different API instances.
+The implementation uses PostgreSQL tstzrange with a GiST exclusion constraint and the btree_gist extension for UUID equality. Migrations must verify extension availability and be tested with simultaneous requests against different API instances.
 
 The appointment exclusion constraint protects booking and rescheduling writes. A failed rescheduling transaction must leave the original row unchanged.
 
-Exclusion constraints alone do not protect availability containment, patient eligibility, or doctor-specialty membership. Their validation and the corresponding mutations need a coordinated transaction and locking strategy, still to be defined. Profile exclusivity and existence use the separate ADR-0008 design, whose trigger visibility and mutation coordination also require implementation validation.
+Exclusion constraints alone do not protect availability containment, patient eligibility, or doctor-specialty membership. [ADR-0005](adr/0005-scheduling-concurrency.md) selects READ COMMITTED transactions with locks ordered by User, MedicalSpecialty, Doctor, then Appointment, sorting Ids within each table. Shared parent-row locks protect eligibility reads; exclusive parent-row locks protect eligibility changes. All appointment, availability, and doctor-assignment mutations exclusively lock the affected Doctor row and validate freshly loaded data before writing. Availability edits that invalidate existing Scheduled appointments are rejected.
+
+Profile exclusivity and existence use the separate ADR-0008 design, whose trigger visibility and mutation coordination also require implementation validation.
 
 Redis is not the authority for these validations.
 
@@ -311,9 +313,8 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 - Complete administrative AccountStatus transition policy.
 - Exact permissions available to PendingVerification accounts.
 - Effect of specialty assignment removal on existing appointments.
-- Concurrency protocol for simultaneous rescheduling, cancellation, or completion of the same appointment.
-- Transaction and locking strategy for validation across tables.
-- Migration details and concurrency tests for the proposed exclusion constraints.
+- Implementation and tests of ADR-0005 locks, stale-appointment checks, timestamp precision, and cross-table validation.
+- Migration details and concurrency tests for the selected exclusion constraints.
 
 The diagram is complete for the current domain entities. These open decisions must be resolved before treating it as a production-ready schema.
 

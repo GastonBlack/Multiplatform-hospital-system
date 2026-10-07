@@ -644,6 +644,8 @@ The system shall prevent a doctor from having multiple Scheduled appointments th
 
 When multiple users attempt to book the same appointment slot concurrently, the system shall allow at most one booking to succeed.
 
+Scheduling writes shall validate current data under the coordinated transaction and row-lock protocol in [ADR-0005](adr/0005-scheduling-concurrency.md). Rescheduling, cancellation, and completion requests shall provide the expected UpdatedAt from their appointment read; the system shall reject stale values and persist a strictly newer value after a successful change.
+
 ---
 
 ## FR-APT-007 — Appointment Status
