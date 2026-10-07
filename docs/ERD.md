@@ -137,6 +137,8 @@ All attributes are required unless marked Nullable. Application workflows remain
 
 User contains authentication data, shared personal information, and AccountStatus.
 
+User.Email stores the canonical address directly, without an additional normalized-email column: trim exterior whitespace and convert to lowercase independently of server culture. Reject internal whitespace and validate the address before persistence; preserve dots and plus suffixes without provider-specific rewriting. All account creation, permitted email changes, and email-based login lookups use the same NormalizeEmail operation. The unconditional UNIQUE (Email) constraint protects concurrent writes of canonical values across all profile types.
+
 Patient, Doctor, and Staff each have their own Id and a required, unique UserId referencing User.Id.
 
 This provides:
@@ -240,7 +242,7 @@ Version 1 does not introduce replacement appointment rows or a rescheduling-hist
 
 | Table | Required constraint |
 | --- | --- |
-| User | Unique Email using a consistently defined email normalization policy |
+| User | UNIQUE (Email) on the canonical address defined in section 4.1 |
 | User | AccountStatus restricted to PendingVerification, Active, Suspended, or Deactivated |
 | User | Required ProfileType restricted to Patient, Doctor, or Staff; UNIQUE (Id, ProfileType) |
 | Patient, Doctor, Staff | Required unique UserId and required ProfileType fixed to the table's type |
@@ -312,7 +314,7 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 ## 8. Decisions Still Required
 
 - Migration details, deferred-trigger behavior, and concurrency validation for the selected exactly-one-profile design.
-- Email and national-identification normalization policies.
+- National-identification normalization policy.
 - Complete administrative AccountStatus transition policy.
 - Implementation and tests of ADR-0005 locks, stale-appointment checks, timestamp precision, and cross-table validation.
 - Migration details and concurrency tests for the selected exclusion constraints.

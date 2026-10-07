@@ -198,6 +198,8 @@ PostgreSQL exclusion constraints protect overlapping appointment and availabilit
 
 Global EmployeeNumber ownership is enforced through the EmployeeNumbers registry primary key and composite foreign keys from Doctor and Staff. Registry creation participates in the employee-registration transaction; it is not a separate domain module.
 
+Users owns the dedicated NormalizeEmail policy used for account creation, permitted email changes, and Authentication's email-based login lookup. It trims exterior whitespace and converts to lowercase independently of server culture; input validation rejects internal whitespace and preserves dots and plus suffixes. Persist only validated canonical values in User.Email and enforce UNIQUE (Email) in PostgreSQL. Do not apply this policy as a generic text normalizer to other fields.
+
 Users allocates employee numbers from one PostgreSQL bigint sequence shared by Doctor and Staff under [ADR-0007](adr/0007-employee-number-registry.md), formatting canonical EMP- text with at least six digits. Numbers are immutable and not reused; allocation may leave gaps on rollback while account/profile/registry rows remain atomic. Response DTOs expose numbers only to authorized hospital personnel, excluding public doctor data and patient responses.
 
 Exactly-one-profile enforcement uses User.ProfileType, fixed profile-table discriminators, composite foreign keys, unique UserId, and initially deferred constraint triggers, as selected in [ADR-0008](adr/0008-single-user-profile.md). Registration services must handle validation failures at transaction commit; migrations and tests must verify the database behavior.

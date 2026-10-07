@@ -44,6 +44,8 @@ The word **shall** indicates functionality required for Version 1.
 
 The system shall allow registered users to authenticate using their credentials.
 
+Email-based login shall use the same NormalizeEmail policy as account creation and permitted email changes, as defined in BR-ACC-001: trim exterior whitespace, convert to lowercase independently of server culture, and reject internal whitespace without removing it.
+
 ---
 
 ## FR-AUTH-002 — Invalid Credentials
@@ -193,6 +195,8 @@ FirstName, LastName, Email, and PasswordHash belong to User. NationalIdentificat
 ## FR-PAT-004 — Unique Email
 
 The system shall prevent multiple user accounts from being registered with the same email address.
+
+All account creation and permitted email changes shall store canonical User.Email values using NormalizeEmail and PostgreSQL uniqueness enforcement. Exterior whitespace and letter case shall not distinguish accounts. Internal whitespace shall be rejected; dots and plus suffixes shall be preserved without provider-specific rewriting. Validate the address before persistence. This policy applies to Patient, Doctor, and Staff accounts.
 
 ---
 

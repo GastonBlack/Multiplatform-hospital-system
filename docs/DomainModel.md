@@ -90,6 +90,7 @@ Each User is associated with exactly one:
 ### Invariants
 
 - Email identifies at most one User.
+- Email is stored canonically after trimming exterior whitespace and converting to lowercase independently of server culture. Reject internal whitespace; preserve dots and plus suffixes. Account creation, permitted email changes, and email-based login use the same dedicated NormalizeEmail policy.
 - Passwords are never stored in plaintext.
 - Each User has exactly one profile type in Version 1.
 - ProfileType is Patient, Doctor, or Staff and must match the associated profile. It is distinct from StaffRole.

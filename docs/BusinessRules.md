@@ -95,6 +95,10 @@ A user email address shall identify at most one user account.
 
 Two user accounts shall not share the same email address.
 
+For Version 1, email comparison shall be case-insensitive. A dedicated NormalizeEmail operation shall trim leading/trailing whitespace and convert the address to lowercase independently of server culture. Reject any remaining internal whitespace; do not remove it to repair the address. Preserve dots and plus suffixes without provider-specific rewriting, and validate the email before persistence.
+
+Use the same normalization for every account creation, permitted email change, and email-based login lookup. Store the canonical value in User.Email and enforce its uniqueness in PostgreSQL. This rule applies across all profile types; generic normalization shall not alter names, passwords, or other identifiers.
+
 ---
 
 ## BR-ACC-002 — User Role
