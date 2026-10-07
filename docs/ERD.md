@@ -164,7 +164,7 @@ See [ADR-0008](adr/0008-single-user-profile.md). This is the selected enforcemen
 
 Patient.NationalIdentificationNumber stores only Uruguayan cédulas de identidad in Version 1, including the supplied check digit. NormalizeNationalIdentificationNumber removes presentation whitespace, dots, and hyphens and rejects other non-digit characters. Persist the remaining digits as text without losing leading zeros or the final check digit; 1 234 324 1 becomes 12343241. All registration paths and permitted identity-number changes/lookups use this same policy. UNIQUE (NationalIdentificationNumber) protects canonical values against duplicate and concurrent registration.
 
-Normalization and retention of the check digit do not establish identity verification. Accepted lengths and automatic check-digit validation remain separate implementation-policy decisions.
+Version 1 preserves the supplied check digit without calculating or validating its checksum; no checksum constraint is required. Normalization and retention of the check digit do not establish identity verification, which remains an in-person receptionist workflow. Accepted lengths remain a separate implementation-policy decision.
 
 IdentityVerifiedAt and IdentityVerifiedByUserId are nullable together before verification and populated together afterward.
 
@@ -318,7 +318,7 @@ PostgreSQL storage names and Entity Framework Core mappings will be defined duri
 ## 8. Decisions Still Required
 
 - Migration details, deferred-trigger behavior, and concurrency validation for the selected exactly-one-profile design.
-- Accepted Uruguayan CI lengths and automatic check-digit validation policy.
+- Accepted Uruguayan CI lengths.
 - Complete administrative AccountStatus transition policy.
 - Implementation and tests of ADR-0005 locks, stale-appointment checks, timestamp precision, and cross-table validation.
 - Migration details and concurrency tests for the selected exclusion constraints.
