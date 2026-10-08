@@ -6,7 +6,9 @@ The API runs locally with .NET 10. PostgreSQL 18.6 runs through the root compose
 
 HospitalDbContext exposes Users and Patients and loads their IEntityTypeConfiguration mappings from Infrastructure/Persistence/Configurations. User enums are stored as constrained text; email and patient identification numbers are unique. Patient has a unique UserId and a composite account/profile-type foreign key. Its fixed ProfileType is initialized to Patient with a private setter so EF can order account/profile inserts together. It is a persistence discriminator, not an independently editable profile field. Verification fields must be absent or populated together, and referenced accounts use restrictive deletion.
 
-These mappings are not yet an applied schema. Doctor/Staff mappings, the employee-number registry, the deferred exactly-one-profile triggers, migrations, and registration workflows remain subsequent implementation steps. Do not use EnsureCreated or apply a production schema without completing those guarantees. Check-digit arithmetic remains out of scope; patient identification requires exactly eight ASCII digits.
+HospitalDbContext also exposes Doctors, Staff, and EmployeeNumbers. Doctor and Staff use fixed profile discriminators and unique UserId values. EmployeeNumbers has EmployeeNumber as its primary key, a unique UserId, and an alternate composite key (EmployeeNumber, UserId). Employee profile foreign keys reference that pair so a profile cannot use another account's employee number. Medical licenses are unique, StaffRole is constrained text, and these relationships use restrictive deletion.
+
+These mappings are not yet an applied schema. Employee-number generation, the deferred exactly-one-profile triggers, migrations, and registration workflows remain subsequent implementation steps. Do not use EnsureCreated or apply a production schema without completing those guarantees. Check-digit arithmetic remains out of scope; patient identification requires exactly eight ASCII digits.
 
 ## PostgreSQL
 
