@@ -17,6 +17,7 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.HasSequence<long>("EmployeeNumberSequence").StartsAt(1).IncrementsBy(1);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(HospitalDbContext).Assembly);
     }
 }

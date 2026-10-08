@@ -8,7 +8,13 @@ HospitalDbContext exposes Users and Patients and loads their IEntityTypeConfigur
 
 HospitalDbContext also exposes Doctors, Staff, and EmployeeNumbers. Doctor and Staff use fixed profile discriminators and unique UserId values. EmployeeNumbers has EmployeeNumber as its primary key, a unique UserId, and an alternate composite key (EmployeeNumber, UserId). Employee profile foreign keys reference that pair so a profile cannot use another account's employee number. Medical licenses are unique, StaffRole is constrained text, and these relationships use restrictive deletion.
 
-These mappings are not yet an applied schema. Employee-number generation, the deferred exactly-one-profile triggers, migrations, and registration workflows remain subsequent implementation steps. Do not use EnsureCreated or apply a production schema without completing those guarantees. Check-digit arithmetic remains out of scope; patient identification requires exactly eight ASCII digits.
+The InitialAccounts migration creates these five tables, their constraints, and EmployeeNumberSequence (bigint, starting at 1, incrementing by 1, without cycling). Number allocation and canonical formatting still belong to the future registration workflow; the sequence alone does not assign EmployeeNumber values.
+
+Deferred constraint triggers require a matching profile when a transaction commits. Immediate keys prevent multiple or mismatched profiles. Profile mutations lock the affected User rows in UUID order before changing the profile; deferred checks read the final state under READ COMMITTED. Account/profile creation must use one transaction, including the employee registry for Doctor and Staff. Validation can fail at commit even after SaveChanges succeeds. TRUNCATE is rejected on all five tables. Production application credentials must not own the schema or have privileges to disable triggers.
+
+Migration validation used a disposable PostgreSQL database: valid patient/doctor/staff creation across separate SaveChanges calls, missing profiles, profile deletion and ownership changes, rollback, deactivation preserving profiles, conflicting concurrent writes, sequence gaps, TRUNCATE rejection, and Down/Up round-trip. This was a temporary integration probe, not a committed test suite or a CI job.
+
+Registration workflows remain subsequent implementation steps. Do not use EnsureCreated. Check-digit arithmetic remains out of scope; patient identification requires exactly eight ASCII digits.
 
 ## PostgreSQL
 
@@ -49,6 +55,25 @@ dotnet run --project HospitalPlatform.Api
 Program.cs selects UseNpgsql through AddDbContext. HospitalDbContext receives its configured options through dependency injection. Each request receives a scoped context; do not use one context concurrently across operations.
 
 Timestamp instants must be assigned in UTC. Hospital-local display and scheduling rules use America/Montevideo. DateOfBirth remains DateOnly.
+
+## Migrations
+
+Restore the repository-local EF tool on a fresh checkout, then apply pending migrations after configuring the connection and starting PostgreSQL:
+
+```powershell
+dotnet tool restore
+dotnet ef database update --project HospitalPlatform.Api -- --environment Development
+```
+
+EF records applied migrations in __EFMigrationsHistory, so running the command again does not recreate tables. Migrations and HospitalDbContextModelSnapshot are versioned source files. Up applies a schema change; Down reverses it. Reversing InitialAccounts drops the account/profile tables and their data, so do not use it on a populated application database.
+
+For a future model change, generate and review a new migration before applying it:
+
+```powershell
+dotnet ef migrations add <DescriptiveName> --project HospitalPlatform.Api --output-dir Infrastructure/Persistence/Migrations -- --environment Development
+```
+
+Custom trigger SQL lives in the migration; EF does not generate it from entity mappings. Future changes to these guarantees require an explicit migration. The API does not automatically migrate on startup.
 
 ## Build and CI
 

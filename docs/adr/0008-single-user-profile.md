@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Version 1. The persistence design is selected; migrations, trigger behavior, and concurrency guarantees still require implementation and testing.
+Accepted for Version 1. Implemented in InitialAccounts and validated against a disposable PostgreSQL database, including commit-time rejection, rollback, and conflicting concurrent writes. Automated regression tests in the repository and CI remain pending.
 
 ## Context
 
@@ -48,7 +48,7 @@ Create User and its profile in one transaction. For employees, include EmployeeN
 
 Use immediate composite foreign keys for type matching and initially deferred constraint triggers for profile existence. Services must handle validation failures occurring at commit, not only at SaveChanges.
 
-Finalize coordination of mutations affecting the same User, including locking and trigger visibility under the selected isolation level, during migration design. Do not grant the application a way to disable constraints or bypass row checks through TRUNCATE.
+Under READ COMMITTED, immediate profile-mutation triggers lock affected User rows with FOR UPDATE in UUID order, including old and new owners for linkage changes. User mutations already lock their own row. Deferred checks acquire the owner lock and query the final profile state in a subsequent statement. Services affecting several accounts must also acquire their User locks in UUID order before mutations. Do not grant the application a way to disable constraints; InitialAccounts rejects TRUNCATE on account, profile, and registry tables.
 
 ## Alternatives Considered
 

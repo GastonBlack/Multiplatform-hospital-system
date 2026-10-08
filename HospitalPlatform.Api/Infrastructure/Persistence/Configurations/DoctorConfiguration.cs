@@ -20,7 +20,8 @@ public class DoctorConfiguration : IEntityTypeConfiguration<Doctor>
 
         builder.Property(doctor => doctor.ProfileType)
             .HasConversion<string>()
-            .HasDefaultValue(ProfileType.Doctor);
+            .HasDefaultValue(ProfileType.Doctor)
+            .HasSentinel(ProfileType.Doctor);
 
         builder.HasOne<User>()
             .WithOne()

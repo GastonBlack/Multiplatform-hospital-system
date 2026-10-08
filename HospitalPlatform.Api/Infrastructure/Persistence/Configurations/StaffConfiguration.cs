@@ -22,7 +22,8 @@ public class StaffConfiguration : IEntityTypeConfiguration<Staff>
 
         builder.Property(staff => staff.ProfileType)
             .HasConversion<string>()
-            .HasDefaultValue(ProfileType.Staff);
+            .HasDefaultValue(ProfileType.Staff)
+            .HasSentinel(ProfileType.Staff);
         builder.Property(staff => staff.StaffRole).HasConversion<string>();
 
         builder.HasOne<User>()

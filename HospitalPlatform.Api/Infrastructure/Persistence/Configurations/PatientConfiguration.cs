@@ -26,7 +26,8 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
 
         builder.Property(patient => patient.ProfileType)
             .HasConversion<string>()
-            .HasDefaultValue(ProfileType.Patient);
+            .HasDefaultValue(ProfileType.Patient)
+            .HasSentinel(ProfileType.Patient);
 
         builder.HasOne<User>()
             .WithOne()
