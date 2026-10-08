@@ -8,4 +8,10 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Patient> Patients => Set<Patient>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(HospitalDbContext).Assembly);
+    }
 }

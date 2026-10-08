@@ -1,3 +1,5 @@
+using HospitalPlatform.Api.Features.Users.Models;
+
 namespace HospitalPlatform.Api.Features.Patients.Models;
 
 public class Patient
@@ -5,6 +7,7 @@ public class Patient
     public Guid Id { get; set; } = Guid.NewGuid();
 
     public required Guid UserId { get; set; }
+    public ProfileType ProfileType { get; private set; } = ProfileType.Patient;
 
     public required string NationalIdentificationNumber { get; set; }
     public required string PhoneNumber { get; set; }

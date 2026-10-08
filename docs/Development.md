@@ -4,7 +4,9 @@
 
 The API runs locally with .NET 10. PostgreSQL 18.6 runs through the root compose.yaml. EF Core uses the Npgsql provider and a scoped HospitalDbContext, registered in Program.cs.
 
-HospitalDbContext currently exposes Users and Patients. This is the initial connection setup: explicit entity mappings, profile constraints, migrations, and registration workflows are subsequent implementation steps. Do not use EnsureCreated or apply an initial schema based only on conventions.
+HospitalDbContext exposes Users and Patients and loads their IEntityTypeConfiguration mappings from Infrastructure/Persistence/Configurations. User enums are stored as constrained text; email and patient identification numbers are unique. Patient has a unique UserId and a composite account/profile-type foreign key. Its fixed ProfileType is initialized to Patient with a private setter so EF can order account/profile inserts together. It is a persistence discriminator, not an independently editable profile field. Verification fields must be absent or populated together, and referenced accounts use restrictive deletion.
+
+These mappings are not yet an applied schema. Doctor/Staff mappings, the employee-number registry, the deferred exactly-one-profile triggers, migrations, and registration workflows remain subsequent implementation steps. Do not use EnsureCreated or apply a production schema without completing those guarantees. Check-digit arithmetic remains out of scope; patient identification requires exactly eight ASCII digits.
 
 ## PostgreSQL
 
