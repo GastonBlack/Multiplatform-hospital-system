@@ -190,6 +190,8 @@ This shall include at least:
 
 FirstName, LastName, Email, and PasswordHash belong to User. NationalIdentificationNumber, DateOfBirth, and PhoneNumber belong to the Patient profile.
 
+Public patient registration requires first and last names of 2–120 characters each, an email input of at most 150 characters, a password of 6–12 characters inclusive, and a required phone number of at most 30 characters with general phone-format validation. These string-length limits use .NET UTF-16 length. Validate email through the shared NormalizeEmail policy, allowing exterior whitespace while rejecting internal whitespace; registration must persist only the canonical value. Passwords are not trimmed or case-normalized, and no letter/digit/symbol composition rule is required. DateOfBirth must be supplied and cannot be later than the current hospital-local date in America/Montevideo. Identification-number input follows FR-PAT-005's strict eight-digit rule.
+
 ---
 
 ## FR-PAT-004 — Unique Email
@@ -204,9 +206,9 @@ All account creation and permitted email changes shall store canonical User.Emai
 
 The system shall prevent multiple patient records from using the same national identification number.
 
-Version 1 shall accept only Uruguayan cédulas de identidad including the supplied check digit. All registration paths and permitted identity-number changes/lookups shall use NormalizeNationalIdentificationNumber as defined in BR-PAT-002: remove presentation whitespace, dots, and hyphens, reject other non-digit characters, and preserve leading zeros and the final check digit. Store the canonical digit string as text and enforce uniqueness in PostgreSQL. Version 1 shall not calculate or validate the check-digit checksum. Format validation shall not replace receptionist identity verification.
+Version 1 shall accept only Uruguayan cédulas de identidad including the supplied check digit. All registration paths and permitted identity-number changes/lookups shall use the strict validation defined in BR-PAT-002: accept digits only and reject whitespace, dots, hyphens, and other non-digit characters without repairing the input. Store the accepted digit string unchanged as text, preserving leading zeros and the final check digit, and enforce uniqueness in PostgreSQL. Version 1 shall not calculate or validate the check-digit checksum. Format validation shall not replace receptionist identity verification.
 
-The normalized input shall contain exactly eight ASCII digits (0–9), including the supplied check digit. The system shall reject any other length and request the complete cédula, including any leading zero and the check digit, rather than automatically padding or truncating it. Public and receptionist registration and permitted identity-number changes shall not persist invalid values.
+The input as entered shall contain exactly eight ASCII digits (0–9), including the supplied check digit. The system shall reject any other length and request the complete cédula, including any leading zero and the check digit, rather than automatically padding or truncating it. Public and receptionist registration and permitted identity-number changes shall not persist invalid values.
 
 ---
 

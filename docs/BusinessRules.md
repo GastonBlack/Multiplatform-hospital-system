@@ -183,11 +183,11 @@ A patient created through public self-registration shall initially have a `Pendi
 
 A national identification number shall identify at most one patient within the system.
 
-Version 1 shall accept only Uruguayan cédulas de identidad, including the supplied check digit. A dedicated NormalizeNationalIdentificationNumber operation shall remove whitespace, dots, and hyphens used as presentation separators; reject other non-digit characters rather than silently removing them. Store the remaining digits as text, preserving leading zeros and the final check digit. For example, 1 234 324 1 and 1.234.324-1 both normalize to 12343241.
+Version 1 shall accept only Uruguayan cédulas de identidad, including the supplied check digit. Input shall contain digits only: reject whitespace, dots, hyphens, and every other non-digit character without removing or repairing them. Store the accepted input unchanged as text, preserving leading zeros and the final check digit. For example, 12343241 is accepted; 1 234 324 1 and 1.234.324-1 are rejected.
 
-After removing presentation separators, require exactly eight ASCII digits (0–9), including the check digit supplied by the person entering the document. Reject shorter or longer values and ask for the complete cédula, including any leading zero and the check digit. Do not add zeros, infer missing digits, or truncate the input.
+Require exactly eight ASCII digits (0–9) as entered, including the check digit supplied by the person entering the document. Reject shorter or longer values and ask for the complete cédula, including any leading zero and the check digit. Do not add zeros, infer missing digits, or truncate the input.
 
-Use the same normalization and eight-digit validation for public self-registration, receptionist registration, and any permitted identity-number change or lookup. PostgreSQL shall enforce uniqueness and the eight-digit storage format of Patient.NationalIdentificationNumber. Version 1 shall preserve the supplied check digit without calculating or validating its checksum. Formatting or retaining the check digit shall not mark the patient's identity as verified; in-person verification remains required.
+Use the same strict eight-digit validation for public self-registration, receptionist registration, and any permitted identity-number change or lookup. PostgreSQL shall enforce uniqueness and the eight-digit storage format of Patient.NationalIdentificationNumber. Version 1 shall preserve the supplied check digit without calculating or validating its checksum. Format validation shall not mark the patient's identity as verified; in-person verification remains required.
 
 ---
 

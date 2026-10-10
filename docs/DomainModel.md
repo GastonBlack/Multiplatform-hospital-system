@@ -198,8 +198,8 @@ Authentication and shared personal information belong to the associated User.
 ### Invariants
 
 - NationalIdentificationNumber identifies at most one Patient.
-- Version 1 uses only Uruguayan cédulas de identidad, including the supplied check digit. Store normalized digits as text, removing presentation whitespace, dots, and hyphens while preserving leading zeros and the final digit. Reject other non-digit characters. All registration paths and permitted identity-number changes/lookups use the same dedicated normalization policy.
-- The normalized cédula must contain exactly eight ASCII digits (0–9), including the supplied check digit. Reject other lengths with guidance to enter the complete document; do not automatically add a leading zero, infer missing digits, or truncate input.
+- Version 1 uses only Uruguayan cédulas de identidad, including the supplied check digit. Accept digits only and reject whitespace, dots, hyphens, and other non-digit characters without repairing the input. Store accepted values unchanged as text, preserving leading zeros and the final digit. All registration paths and permitted identity-number changes/lookups use the same strict validation policy.
+- The cédula as entered must contain exactly eight ASCII digits (0–9), including the supplied check digit. Reject other lengths with guidance to enter the complete document; do not automatically add a leading zero, infer missing digits, or truncate input.
 - IdentityVerifiedAt and IdentityVerifiedByUserId are both absent before verification.
 - Both verification attributes are present after successful verification.
 - The verification actor must be an authorized receptionist at the time of verification.
