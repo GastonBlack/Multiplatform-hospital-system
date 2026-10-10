@@ -14,7 +14,13 @@ Deferred constraint triggers require a matching profile when a transaction commi
 
 Migration validation used a disposable PostgreSQL database: valid patient/doctor/staff creation across separate SaveChanges calls, missing profiles, profile deletion and ownership changes, rollback, deactivation preserving profiles, conflicting concurrent writes, sequence gaps, TRUNCATE rejection, and Down/Up round-trip. This was a temporary integration probe, not a committed test suite or a CI job.
 
-Registration workflows remain subsequent implementation steps. Do not use EnsureCreated. Check-digit arithmetic remains out of scope; patient identification requires exactly eight ASCII digits.
+Public patient registration is implemented in PatientRegistrationService, behind IPatientRegistrationService and registered as scoped in Program.cs. RegisterAsync validates RegisterPatientRequest, canonicalizes email through the shared EmailNormalizer, and hashes the unchanged password using ASP.NET Core's PasswordHasher<User>. It creates User with ProfileType.Patient and PendingVerification plus an unverified Patient in one explicit transaction. Both timestamps are assigned in UTC; identification input remains unchanged and must contain exactly eight ASCII digits. PostgreSQL uniqueness violations for email and identification become ConflictException errors with a message identifying the duplicate; other persistence failures propagate and transaction disposal rolls back uncommitted data. The response contains only UserId, PatientId, and AccountStatus and is returned after commit.
+
+ExceptionHandlingMiddleware is registered before the remaining HTTP middleware. Custom AppException types carry the expected status and error code; ValidationException maps to 400 and DbUpdateConcurrencyException maps to 409. Unknown errors, including other DbUpdateException, InvalidOperationException, and ArgumentException failures, map to 500. ErrorResponse uses camelCase JSON and includes error, message, statusCode, traceId, and a UTC timestamp. Unexpected exception messages are exposed only in Development; Production returns a generic message. Errors are logged, and an already-started response is not overwritten.
+
+The registration controller, login, and receptionist/employee registration workflows remain subsequent implementation steps. No registration endpoint or automatic login is introduced by the service. Do not use EnsureCreated. Check-digit arithmetic remains out of scope.
+
+A temporary PostgreSQL integration probe verified committed registration data, unchanged password verification, different salted hashes for equal passwords, duplicate email/identification errors, invalid input, full rollback after a deferred commit failure, and competing registrations with the same email. These service checks are not yet a committed test suite or part of CI.
 
 ## PostgreSQL
 
