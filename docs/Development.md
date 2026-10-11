@@ -18,9 +18,25 @@ Public patient registration is implemented in PatientRegistrationService, behind
 
 ExceptionHandlingMiddleware is registered before the remaining HTTP middleware. Custom AppException types carry the expected status and error code; ValidationException maps to 400 and DbUpdateConcurrencyException maps to 409. Unknown errors, including other DbUpdateException, InvalidOperationException, and ArgumentException failures, map to 500. ErrorResponse uses camelCase JSON and includes error, message, statusCode, traceId, and a UTC timestamp. Unexpected exception messages are exposed only in Development; Production returns a generic message. Errors are logged, and an already-started response is not overwritten.
 
-The registration controller, login, and receptionist/employee registration workflows remain subsequent implementation steps. No registration endpoint or automatic login is introduced by the service. Do not use EnsureCreated. Check-digit arithmetic remains out of scope.
+PatientsController exposes public POST /api/patients/register and calls IPatientRegistrationService. Successful registration returns 201 with UserId, PatientId, and AccountStatus, without passwords, hashes, or tokens. AccountStatus currently uses the default numeric enum serialization (1 means PendingVerification). ApiController validates request DTOs and returns automatic 400 ValidationProblemDetails responses for invalid input or malformed JSON before invoking the service. Known duplicates become 409 ErrorResponse responses through the exception middleware. These are different error-body shapes; clients should use the HTTP status and the corresponding response fields. Login and receptionist/employee registration workflows remain subsequent implementation steps. Registration does not automatically log the patient in. Do not use EnsureCreated. Check-digit arithmetic remains out of scope.
+
+Example request body:
+
+```json
+{
+  "firstName": "Ana",
+  "lastName": "Perez",
+  "email": "ana@example.com",
+  "password": "Ab1!_?xy",
+  "nationalIdentificationNumber": "01234567",
+  "phoneNumber": "+598 99 123 456",
+  "dateOfBirth": "2000-01-01"
+}
+```
 
 A temporary PostgreSQL integration probe verified committed registration data, unchanged password verification, different salted hashes for equal passwords, duplicate email/identification errors, invalid input, full rollback after a deferred commit failure, and competing registrations with the same email. These service checks are not yet a committed test suite or part of CI.
+
+A temporary HTTP/PostgreSQL probe also verified 20 requests through the real PatientsController, service, and exception middleware: anonymous 201 registration, automatic 400 responses for invalid or missing fields and malformed JSON, duplicate email/identification 409 responses, safe response fields, server-owned profile/status/verification values, and concurrent same-email registration with exactly one committed account/profile pair. The disposable database and HTTP server were removed after testing; the application database was not modified. These checks are not yet part of CI.
 
 ## PostgreSQL
 
