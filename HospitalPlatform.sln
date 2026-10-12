@@ -5,6 +5,10 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitalPlatform.Api", "HospitalPlatform.Api\HospitalPlatform.Api.csproj", "{6B3C59C8-7D63-407B-9D61-E6AEE126744A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitalPlatform.Api.IntegrationTests", "tests\HospitalPlatform.Api.IntegrationTests\HospitalPlatform.Api.IntegrationTests.csproj", "{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,8 +31,23 @@ Global
 		{6B3C59C8-7D63-407B-9D61-E6AEE126744A}.Release|x64.Build.0 = Release|Any CPU
 		{6B3C59C8-7D63-407B-9D61-E6AEE126744A}.Release|x86.ActiveCfg = Release|Any CPU
 		{6B3C59C8-7D63-407B-9D61-E6AEE126744A}.Release|x86.Build.0 = Release|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Debug|x64.Build.0 = Debug|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Debug|x86.Build.0 = Debug|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Release|x64.ActiveCfg = Release|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Release|x64.Build.0 = Release|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Release|x86.ActiveCfg = Release|Any CPU
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{00B4E0D5-66AC-4BDE-B721-781F634BA7BF} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

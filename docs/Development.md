@@ -34,9 +34,9 @@ Example request body:
 }
 ```
 
-A temporary PostgreSQL integration probe verified committed registration data, unchanged password verification, different salted hashes for equal passwords, duplicate email/identification errors, invalid input, full rollback after a deferred commit failure, and competing registrations with the same email. These service checks are not yet a committed test suite or part of CI.
+A temporary PostgreSQL integration probe verified committed registration data, unchanged password verification, different salted hashes for equal passwords, duplicate email/identification errors, invalid input, full rollback after a deferred commit failure, and competing registrations with the same email. That probe was temporary; the committed registration test suite is described below.
 
-A temporary HTTP/PostgreSQL probe also verified 20 requests through the real PatientsController, service, and exception middleware: anonymous 201 registration, automatic 400 responses for invalid or missing fields and malformed JSON, duplicate email/identification 409 responses, safe response fields, server-owned profile/status/verification values, and concurrent same-email registration with exactly one committed account/profile pair. The disposable database and HTTP server were removed after testing; the application database was not modified. These checks are not yet part of CI.
+A temporary HTTP/PostgreSQL probe also verified 20 requests through the real PatientsController, service, and exception middleware: anonymous 201 registration, automatic 400 responses for invalid or missing fields and malformed JSON, duplicate email/identification 409 responses, safe response fields, server-owned profile/status/verification values, and concurrent same-email registration with exactly one committed account/profile pair. The disposable database and HTTP server were removed after testing; the application database was not modified. That probe was temporary; CI now runs the committed registration tests described below.
 
 ## PostgreSQL
 
@@ -102,9 +102,27 @@ Custom trigger SQL lives in the migration; EF does not generate it from entity m
 ```powershell
 dotnet restore HospitalPlatform.sln
 dotnet build HospitalPlatform.sln --configuration Release --no-restore
+dotnet test --solution HospitalPlatform.sln --configuration Release --no-build --no-restore
 ```
 
-The current CI restores and builds the solution and does not require a running database. Database integration tests will add a PostgreSQL service when introduced.
+The CI job starts a PostgreSQL 18.6 service container, restores dependencies, builds the solution, and runs the integration tests. Its hardcoded database credentials belong only to the disposable test container; they are not application credentials. The GitHub run must still be checked after pushing.
+
+## Integration Tests
+
+tests/HospitalPlatform.Api.IntegrationTests uses xUnit (xunit.v3 package) and Microsoft.AspNetCore.Mvc.Testing. Test suites are organized by feature: Features/Patients/PatientRegistrationTests.cs covers patient registration, while Infrastructure/HospitalApiFactory.cs owns the shared test host and database setup. WebApplicationFactory starts the real Program entry point with the Testing environment, configured exclusively for the generated test database. The public partial Program declaration makes that entry point accessible to tests. global.json selects Microsoft.Testing.Platform, the runner supported by the current xUnit package on .NET 10. The HTTPS client base address avoids testing HTTPS redirects instead of registration.
+
+Each test case creates a new hospital_test_<random UUID> database, applies the real EF migrations, and calls the real HTTP controller, service, and exception middleware. Cleanup stops the test host before dropping that generated database. It does not truncate tables or modify hospital_platform. PostgreSQL credentials need permission to create and drop test databases.
+
+Locally, start Docker Desktop and run docker compose up -d --wait. Tests first read HOSPITAL_TEST_CONNECTION_STRING when provided; otherwise they use the API's existing development connection secret for server credentials. The database name is replaced with a generated name. No password or connection string is committed for local development. CI supplies HOSPITAL_TEST_CONNECTION_STRING for its own PostgreSQL container.
+
+Fact marks a single test; Theory plus InlineData runs the same test with several inputs. The suite covers successful registration and persisted ownership/state, canonical email, leading zeros, UTC timestamps, password hash verification, a response without password/hash fields, invalid input and malformed/missing JSON, duplicate email/identification rollback, and concurrent duplicate-email registrations. Cancellation-token plumbing is intentionally omitted; only the corresponding xUnit1051 recommendation is suppressed in the test project.
+
+To build and run tests locally from the repository root:
+
+```powershell
+docker compose up -d --wait
+dotnet test --solution HospitalPlatform.sln --configuration Release
+```
 
 ## References
 

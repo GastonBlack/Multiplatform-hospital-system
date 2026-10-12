@@ -37,3 +37,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Allows integration tests to start the application's real entry point.
+public partial class Program { }
