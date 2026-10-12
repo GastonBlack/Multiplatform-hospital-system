@@ -33,6 +33,20 @@ public class PatientRegistrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task RegisterPatient_WithNoSurname()
+    {
+        var request = CreateRequest();
+        request.LastName = "";
+
+        using var response = await client.PostAsJsonAsync(
+            RegistrationUrl,
+            request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertCountsAsync(0);
+    }
+
+    [Fact]
     public async Task Register_WithValidData_CreatesAccountAndUnverifiedProfile()
     {
         var request = CreateRequest();

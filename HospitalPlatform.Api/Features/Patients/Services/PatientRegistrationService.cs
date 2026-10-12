@@ -11,9 +11,23 @@ using Npgsql;
 
 namespace HospitalPlatform.Api.Features.Patients.Services;
 
-public class PatientRegistrationService(HospitalDbContext dbContext, IPasswordHasher<User> passwordHasher)
-    : IPatientRegistrationService
+public class PatientRegistrationService : IPatientRegistrationService
 {
+    // //////////////////////////////////////////
+    // Dependencies
+    // //////////////////////////////////////////
+    private readonly HospitalDbContext _db;
+    private readonly IPasswordHasher<User> _passwordHasher;
+
+    public PatientRegistrationService(HospitalDbContext db, IPasswordHasher<User> passwordHasher)
+    {
+        _db = db;
+        _passwordHasher = passwordHasher;
+    }
+
+    // //////////////////////////////////////////
+    // Registration
+    // //////////////////////////////////////////
     public async Task<RegisterPatientResponse> RegisterAsync(RegisterPatientRequest request)
     {
         Validator.ValidateObject(request, new ValidationContext(request), validateAllProperties: true);
@@ -31,7 +45,7 @@ public class PatientRegistrationService(HospitalDbContext dbContext, IPasswordHa
             CreatedAt = now,
             UpdatedAt = now
         };
-        user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
+        user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
         var patient = new Patient
         {
@@ -41,12 +55,12 @@ public class PatientRegistrationService(HospitalDbContext dbContext, IPasswordHa
             DateOfBirth = request.DateOfBirth
         };
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync();
+        await using var transaction = await _db.Database.BeginTransactionAsync();
         try
         {
-            dbContext.Users.Add(user);
-            dbContext.Patients.Add(patient);
-            await dbContext.SaveChangesAsync();
+            _db.Users.Add(user);
+            _db.Patients.Add(patient);
+            await _db.SaveChangesAsync();
             await transaction.CommitAsync();
         }
         catch (DbUpdateException exception)

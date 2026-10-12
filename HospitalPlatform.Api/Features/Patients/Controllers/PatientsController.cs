@@ -7,13 +7,26 @@ namespace HospitalPlatform.Api.Features.Patients.Controllers;
 
 [ApiController]
 [Route("api/patients")]
-public class PatientsController(IPatientRegistrationService registrationService) : ControllerBase
+public class PatientsController : ControllerBase
 {
+    // //////////////////////////////////////////
+    // Dependencies
+    // //////////////////////////////////////////
+    private readonly IPatientRegistrationService _registrationService;
+
+    public PatientsController(IPatientRegistrationService registrationService)
+    {
+        _registrationService = registrationService;
+    }
+
+    // //////////////////////////////////////////
+    // Registration
+    // //////////////////////////////////////////
     [AllowAnonymous]
     [HttpPost("register")]
     public async Task<ActionResult<RegisterPatientResponse>> Register(RegisterPatientRequest request)
     {
-        var response = await registrationService.RegisterAsync(request);
+        var response = await _registrationService.RegisterAsync(request);
         return StatusCode(StatusCodes.Status201Created, response);
     }
 }
