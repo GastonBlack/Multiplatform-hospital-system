@@ -47,6 +47,32 @@ public class PatientRegistrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task RegisterPatient_WithInvalidBornDate()
+    {
+        var request = CreateRequest();
+
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Montevideo");
+        var today = DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, timeZone).DateTime);
+
+        request.DateOfBirth = today.AddDays(1);
+
+        using var response = await client.PostAsJsonAsync(
+            RegistrationUrl,
+            request
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Contains(
+            json.RootElement.GetProperty("errors").EnumerateObject(),
+            error => error.Name == nameof(RegisterPatientRequest.DateOfBirth));
+
+        await AssertCountsAsync(0);
+    }
+
+    [Fact]
     public async Task Register_WithValidData_CreatesAccountAndUnverifiedProfile()
     {
         var request = CreateRequest();
