@@ -4,7 +4,7 @@
 
 This document defines technical authentication persistence for [ADR-0012](adr/0012-authentication-sessions.md), separately from the scheduling [ERD](ERD.md).
 
-The session policy is accepted. This document is a database design, not implemented authentication or validated migrations.
+The session policy is accepted. Backend authentication is implemented with the AuthenticationSessions migration and the login, refresh, logout, and current-session endpoints. Browser cookie transport and production deployment settings remain separate implementation work.
 
 ## 2. Diagram
 
@@ -81,14 +81,26 @@ PendingVerification patients may log in, refresh their session, log out, and rea
 
 Revocation applies to subsequent checks. A write already executing still needs its normal transaction and concurrency validation.
 
-## 6. Implementation Decisions Still Required
+## 6. Backend Implementation
 
-- Signing algorithm, trusted keys, key rotation, issuer, audience, and expiration clock-skew policy.
+- POST /api/auth/login validates credentials and creates a session plus its first refresh-token hash atomically.
+- POST /api/auth/refresh consumes the old token and inserts its replacement under User-before-session locks. Reuse commits session revocation before returning 401.
+- POST /api/auth/logout requires a bearer token and revokes only its current session, returning 204.
+- GET /api/auth/session returns the caller's UserId, SessionId, ProfileType, and current AccountStatus. PendingVerification patients may access it and log out.
+- Access tokens use HS256 with one configured random signing key of at least 32 characters, issuer HospitalPlatform, and audience HospitalPlatform.Api. Validate signature, allowed algorithm, issuer, audience, and expiry with zero clock skew. The local development key is stored in user-secrets; tests generate an isolated key per host. Replacing the configured key invalidates existing access JWTs; refresh sessions remain subject to their database state.
+- Refresh credentials contain 32 random bytes represented as 64 hexadecimal characters. Store SHA-256 of the exact returned text, not the credential itself. Tokens are opaque and are not normalized.
+- JwtSessionEvents reads current session ownership, expiry, revocation, account status, and staff role after JWT validation. Current profile/status/role claims are added from those database values for authorization.
+- The default authorization policy requires an Active account. The explicit AuthenticatedAccount policy permits the accepted limited PendingVerification operations. Future own-profile reads must use that policy; other protected operations still need their feature permissions and ownership checks.
+- Token responses currently use JSON bodies over HTTPS for API/native development. No cookie or automatic browser credential transport is configured. This does not finalize refresh-token storage for React Web.
+
+## 7. Implementation Decisions Still Required
+
+- Production signing-key storage and coordinated key rotation across instances.
 - Web deployment origins, cookie scope/SameSite, CORS, and CSRF defenses for the proposed HttpOnly refresh cookie.
 - Mobile secure-storage library and web refresh coordination across tabs.
-- EF Core mappings, migration details, error handling, retention/cleanup execution, and concurrency tests.
+- Retention/cleanup execution and future account-status services that revoke all sessions atomically on suspension/deactivation. Current authentication checks already deny blocked accounts; reactivation must not restore sessions revoked by those future status workflows.
 
-## 7. References
+## 8. References
 
 - [Authentication Session ADR](adr/0012-authentication-sessions.md)
 - [Architecture](Architecture.md)

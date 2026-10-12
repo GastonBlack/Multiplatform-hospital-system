@@ -1,3 +1,4 @@
+using HospitalPlatform.Api.Features.Authentication.Models;
 using HospitalPlatform.Api.Features.Doctors.Models;
 using HospitalPlatform.Api.Features.Patients.Models;
 using HospitalPlatform.Api.Features.Staff.Models;
@@ -13,6 +14,8 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<Doctor> Doctors => Set<Doctor>();
     public DbSet<Staff> Staff => Set<Staff>();
     public DbSet<EmployeeNumberRegistration> EmployeeNumbers => Set<EmployeeNumberRegistration>();
+    public DbSet<AuthenticationSession> AuthenticationSessions => Set<AuthenticationSession>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

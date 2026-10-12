@@ -24,6 +24,71 @@ namespace HospitalPlatform.Api.Infrastructure.Persistence.Migrations
 
             modelBuilder.HasSequence("EmployeeNumberSequence");
 
+            modelBuilder.Entity("HospitalPlatform.Api.Features.Authentication.Models.AuthenticationSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AuthenticationSessions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AuthenticationSessions_Expiry", "\"ExpiresAt\" > \"CreatedAt\" AND \"ExpiresAt\" <= \"CreatedAt\" + INTERVAL '7 days'");
+                        });
+                });
+
+            modelBuilder.Entity("HospitalPlatform.Api.Features.Authentication.Models.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId")
+                        .IsUnique()
+                        .HasFilter("\"ConsumedAt\" IS NULL");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("RefreshTokens", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RefreshTokens_Expiry", "\"ExpiresAt\" > \"CreatedAt\"");
+
+                            t.HasCheckConstraint("CK_RefreshTokens_Hash", "octet_length(\"TokenHash\") = 32");
+                        });
+                });
+
             modelBuilder.Entity("HospitalPlatform.Api.Features.Doctors.Models.Doctor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -229,6 +294,24 @@ namespace HospitalPlatform.Api.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_Users_ProfileType", "\"ProfileType\" IN ('Patient', 'Doctor', 'Staff')");
                         });
+                });
+
+            modelBuilder.Entity("HospitalPlatform.Api.Features.Authentication.Models.AuthenticationSession", b =>
+                {
+                    b.HasOne("HospitalPlatform.Api.Features.Users.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HospitalPlatform.Api.Features.Authentication.Models.RefreshToken", b =>
+                {
+                    b.HasOne("HospitalPlatform.Api.Features.Authentication.Models.AuthenticationSession", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("HospitalPlatform.Api.Features.Doctors.Models.Doctor", b =>

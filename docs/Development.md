@@ -18,7 +18,7 @@ Public patient registration is implemented in PatientRegistrationService, behind
 
 ExceptionHandlingMiddleware is registered before the remaining HTTP middleware. Custom AppException types carry the expected status and error code; ValidationException maps to 400 and DbUpdateConcurrencyException maps to 409. Unknown errors, including other DbUpdateException, InvalidOperationException, and ArgumentException failures, map to 500. ErrorResponse uses camelCase JSON and includes error, message, statusCode, traceId, and a UTC timestamp. Unexpected exception messages are exposed only in Development; Production returns a generic message. Errors are logged, and an already-started response is not overwritten.
 
-PatientsController exposes public POST /api/patients/register and calls IPatientRegistrationService. Successful registration returns 201 with UserId, PatientId, and AccountStatus, without passwords, hashes, or tokens. AccountStatus currently uses the default numeric enum serialization (1 means PendingVerification). ApiController validates request DTOs and returns automatic 400 ValidationProblemDetails responses for invalid input or malformed JSON before invoking the service. Known duplicates become 409 ErrorResponse responses through the exception middleware. These are different error-body shapes; clients should use the HTTP status and the corresponding response fields. Login and receptionist/employee registration workflows remain subsequent implementation steps. Registration does not automatically log the patient in. Do not use EnsureCreated. Check-digit arithmetic remains out of scope.
+PatientsController exposes public POST /api/patients/register and calls IPatientRegistrationService. Successful registration returns 201 with UserId, PatientId, and AccountStatus, without passwords, hashes, or tokens. AccountStatus currently uses the default numeric enum serialization (1 means PendingVerification). ApiController validates request DTOs and returns automatic 400 ValidationProblemDetails responses for invalid input or malformed JSON before invoking the service. Known duplicates become 409 ErrorResponse responses through the exception middleware. These are different error-body shapes; clients should use the HTTP status and the corresponding response fields. Receptionist/employee registration workflows remain subsequent implementation steps. Registration does not automatically log the patient in. Do not use EnsureCreated. Check-digit arithmetic remains out of scope.
 
 Example request body:
 
@@ -97,6 +97,25 @@ dotnet ef migrations add <DescriptiveName> --project HospitalPlatform.Api --outp
 
 Custom trigger SQL lives in the migration; EF does not generate it from entity mappings. Future changes to these guarantees require an explicit migration. The API does not automatically migrate on startup.
 
+## Authentication
+
+AuthenticationService implements POST /api/auth/login and POST /api/auth/refresh; AuthenticationController also exposes protected POST /api/auth/logout and GET /api/auth/session. Login returns accessToken, refreshToken, accessTokenExpiresAt, and sessionExpiresAt. Refresh accepts the exact refreshToken in a JSON body and replaces it. Logout returns 204 and revokes the current session. Send access tokens only in the Authorization: Bearer header over HTTPS.
+
+AuthenticationSessions creates AuthenticationSessions and RefreshTokens, with expiry, hash-length, ownership, and one-unconsumed-token constraints. Sessions expire seven days after login; JWTs expire after at most fifteen minutes and never outlive their session. Reuse revokes the session even though refresh returns 401. User locks precede session locks; no external call occurs inside these transactions. Authentication middleware runs before authorization and checks the current session/account state on every protected request.
+
+appsettings.json contains the non-secret issuer and audience. The API also requires Authentication:SigningKey with at least 32 characters. The initial development key was generated cryptographically and stored in user-secrets. A fresh developer checkout must generate its own key and set it without committing it:
+
+```powershell
+$keyBytes = New-Object byte[] 32
+$generator = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$generator.GetBytes($keyBytes)
+$generator.Dispose()
+$signingKey = [BitConverter]::ToString($keyBytes).Replace('-', '')
+dotnet user-secrets set "Authentication:SigningKey" $signingKey --project HospitalPlatform.Api
+```
+
+Preserve an existing development key instead of regenerating it on every run. Production supplies the key through protected configuration. Tests override it with a per-host random key, so CI does not require a signing secret. Browser refresh cookies, deployment-origin/CSRF decisions, production key rotation, and expired-session cleanup remain pending; current JSON transport is for API/native development. Future suspension/deactivation workflows must revoke all sessions in their status-change transaction.
+
 ## Build and CI
 
 ```powershell
@@ -109,13 +128,15 @@ The CI job starts a PostgreSQL 18.6 service container, restores dependencies, bu
 
 ## Integration Tests
 
-tests/HospitalPlatform.Api.IntegrationTests uses xUnit (xunit.v3 package) and Microsoft.AspNetCore.Mvc.Testing. Test suites are organized by feature: Features/Patients/PatientRegistrationTests.cs covers patient registration, while Infrastructure/HospitalApiFactory.cs owns the shared test host and database setup. WebApplicationFactory starts the real Program entry point with the Testing environment, configured exclusively for the generated test database. The public partial Program declaration makes that entry point accessible to tests. global.json selects Microsoft.Testing.Platform, the runner supported by the current xUnit package on .NET 10. The HTTPS client base address avoids testing HTTPS redirects instead of registration.
+tests/HospitalPlatform.Api.IntegrationTests uses xUnit (xunit.v3 package) and Microsoft.AspNetCore.Mvc.Testing. Test suites are organized by feature: Features/Patients/PatientRegistrationTests.cs covers patient registration and Features/Authentication/AuthenticationTests.cs covers authentication. Infrastructure/HospitalApiFactory.cs owns the shared test host, isolated signing key, and database setup. AuthorizationProbeController is loaded only by that host to exercise active-account and administrator policies. WebApplicationFactory starts the real Program entry point with the Testing environment, configured exclusively for the generated test database. The public partial Program declaration makes that entry point accessible to tests. global.json selects Microsoft.Testing.Platform, the runner supported by the current xUnit package on .NET 10. The HTTPS client base address avoids testing HTTPS redirects instead of registration.
 
 Each test case creates a new hospital_test_<random UUID> database, applies the real EF migrations, and calls the real HTTP controller, service, and exception middleware. Cleanup stops the test host before dropping that generated database. It does not truncate tables or modify hospital_platform. PostgreSQL credentials need permission to create and drop test databases.
 
 Locally, start Docker Desktop and run docker compose up -d --wait. Tests first read HOSPITAL_TEST_CONNECTION_STRING when provided; otherwise they use the API's existing development connection secret for server credentials. The database name is replaced with a generated name. No password or connection string is committed for local development. CI supplies HOSPITAL_TEST_CONNECTION_STRING for its own PostgreSQL container.
 
 Fact marks a single test; Theory plus InlineData runs the same test with several inputs. The suite covers successful registration and persisted ownership/state, canonical email, leading zeros, UTC timestamps, password hash verification, a response without password/hash fields, invalid input and malformed/missing JSON, duplicate email/identification rollback, and concurrent duplicate-email registrations. Cancellation-token plumbing is intentionally omitted; only the corresponding xUnit1051 recommendation is suppressed in the test project.
+
+Authentication tests cover credential rejection, JWT signing/issuer/audience/expiry and session ownership, refresh hashes and absolute expiry, rotation, consumed-token reuse, concurrent refresh, unknown tokens, independent logins, logout, blocked accounts, expired sessions, and current permissions overriding stale JWT claims. The full local suite passed 34 cases; the strengthened stale-permission cases were also run separately after the final change. GitHub Actions runs these same committed feature suites after push.
 
 To build and run tests locally from the repository root:
 

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using HospitalPlatform.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -13,6 +14,7 @@ public class HospitalApiFactory : WebApplicationFactory<Program>
     private readonly string databaseName = "hospital_test_" + Guid.NewGuid().ToString("N");
     private NpgsqlConnection? adminConnection;
     private string testConnectionString = string.Empty;
+    private readonly string signingKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 
     // Creates an isolated database before starting the API and applying migrations.
     public async Task InitializeAsync()
@@ -42,8 +44,13 @@ public class HospitalApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.ConfigureServices(services => services.AddControllers().AddApplicationPart(typeof(AuthorizationProbeController).Assembly));
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
-            new Dictionary<string, string?> { ["ConnectionStrings:HospitalDatabase"] = testConnectionString }));
+            new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:HospitalDatabase"] = testConnectionString,
+                ["Authentication:SigningKey"] = signingKey
+            }));
     }
 
     // Stops the API before removing only this factory's generated database.

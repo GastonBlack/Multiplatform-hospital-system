@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Version 1: session lifecycle, token lifetimes, rotation, and current database authorization checks. Browser token storage remains a proposal pending deployment-origin and CSRF design; signing-key and issuer details require implementation design.
+Accepted for Version 1: session lifecycle, token lifetimes, rotation, and current database authorization checks. Backend endpoints and persistence are implemented; AuthenticationModel.md records HS256 signing, issuer/audience, and zero clock skew. API/native development uses JSON token responses. Browser cookie storage remains a proposal pending deployment-origin and CSRF design; production key management and cleanup execution remain pending.
 
 ## Context
 
@@ -46,7 +46,7 @@ Clients must coordinate refresh requests rather than refresh independently for e
 
 Session.UserId references User.Id. RefreshToken.SessionId references AuthenticationSession.Id. TokenHash is unique. A partial unique index on SessionId where ConsumedAt is null limits each session to one unconsumed refresh-token row; expiry and session revocation are validated separately.
 
-Authentication owns these records. They are technical authentication persistence, not scheduling entities or additional User profiles. [AuthenticationModel.md](../AuthenticationModel.md) defines their relational design; final EF Core mappings, migrations, and cleanup execution remain implementation work.
+Authentication owns these records. They are technical authentication persistence, not scheduling entities or additional User profiles. [AuthenticationModel.md](../AuthenticationModel.md) defines their relational design and implemented EF mappings and migration; cleanup execution remains implementation work.
 
 ### Current Access and Logout
 
@@ -81,7 +81,7 @@ Use HTTPS and the Authorization bearer header for access tokens. Never place tok
 - Protected requests require database authorization reads; JWT authentication does not eliminate shared session state in this design.
 - Web access tokens remain exposed to malicious JavaScript while in memory; HttpOnly protects only the refresh cookie from direct JavaScript access. Cookie protection is not a replacement for preventing XSS or CSRF.
 - Refresh rotation and revocation require transactional tests, including concurrent refresh, reused tokens, lost responses, logout, expiry, suspension, and role changes.
-- Before implementation, finalize signing-key/issuer design and client storage/deployment details. The referenced security documents inform this design; this ADR does not claim to implement a complete OAuth/OIDC flow.
+- Before production deployment and browser-client implementation, finalize production key management and client storage/deployment details. Backend signing and issuer settings are documented in AuthenticationModel.md. The referenced security documents inform this design; this ADR does not claim to implement a complete OAuth/OIDC flow.
 
 ## Revisit When
 
