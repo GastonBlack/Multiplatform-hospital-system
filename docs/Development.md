@@ -76,6 +76,8 @@ dotnet run --project HospitalPlatform.Api
 
 Program.cs selects UseNpgsql through AddDbContext. HospitalDbContext receives its configured options through dependency injection. Each request receives a scoped context; do not use one context concurrently across operations.
 
+Program.cs groups dependency registration into Database, Feature Services, Authentication, Authorization, and API Services sections before builder.Build(). Register new feature services in Feature Services. After Build, the HTTP pipeline handles exceptions, redirects to HTTPS, authenticates, and authorizes requests in that order; MapControllers exposes the controller endpoints.
+
 Timestamp instants must be assigned in UTC. Hospital-local display and scheduling rules use America/Montevideo. DateOfBirth remains DateOnly.
 
 ## Migrations
