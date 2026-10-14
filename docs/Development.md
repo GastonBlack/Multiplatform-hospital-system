@@ -103,6 +103,15 @@ Custom trigger SQL lives in the migration; EF does not generate it from entity m
 
 AuthenticationService implements POST /api/auth/login and POST /api/auth/refresh; AuthenticationController also exposes protected POST /api/auth/logout and GET /api/auth/session. Login returns accessToken, refreshToken, accessTokenExpiresAt, and sessionExpiresAt. Refresh accepts the exact refreshToken in a JSON body and replaces it. Logout returns 204 and revokes the current session. Send access tokens only in the Authorization: Bearer header over HTTPS.
 
+To inspect the current session, send the following request to the API's HTTPS address, replacing `<accessToken>` with the value returned by login:
+
+```http
+GET /api/auth/session HTTP/1.1
+Authorization: Bearer <accessToken>
+```
+
+A successful response returns userId, sessionId, profileType, and accountStatus. No user ID is needed in the URL: the API obtains it from the validated access token.
+
 AuthenticationSessions creates AuthenticationSessions and RefreshTokens, with expiry, hash-length, ownership, and one-unconsumed-token constraints. Sessions expire seven days after login; JWTs expire after at most fifteen minutes and never outlive their session. Reuse revokes the session even though refresh returns 401. User locks precede session locks; no external call occurs inside these transactions. Authentication middleware runs before authorization and checks the current session/account state on every protected request.
 
 appsettings.json contains the non-secret issuer and audience. The API also requires Authentication:SigningKey with at least 32 characters. The initial development key was generated cryptographically and stored in user-secrets. A fresh developer checkout must generate its own key and set it without committing it:
