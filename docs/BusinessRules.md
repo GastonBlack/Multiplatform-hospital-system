@@ -120,13 +120,13 @@ Version 1 roles are:
 
 ## BR-ACC-003 — Active Account Requirement
 
-A user must have an account state that permits system access before performing protected operations.
+All account states permit authentication lifecycle operations and read-only access to the caller's own account/profile and current status. Other protected operations require an Active account in addition to role, ownership, and feature rules.
 
 ---
 
 ## BR-ACC-004 — Suspended Account
 
-A suspended account shall not be allowed to perform protected operations.
+A suspended account may authenticate, refresh a valid session, log out, and read its own account/profile and status. Other protected operations shall be denied.
 
 Suspension does not imply that previously stored user information is removed.
 
@@ -134,7 +134,7 @@ Suspension does not imply that previously stored user information is removed.
 
 ## BR-ACC-005 — Deactivated Account
 
-A deactivated account shall not be allowed to perform protected operations.
+A deactivated account may authenticate, refresh a valid session, log out, and read its own account/profile and status. Other protected operations shall be denied.
 
 ---
 
@@ -157,7 +157,7 @@ A previously verified patient may still have an account status such as:
 - `Suspended`;
 - `Deactivated`.
 
-Identity verification alone shall therefore not imply that the account is currently permitted to perform protected operations.
+Identity verification alone shall therefore not grant permission for protected business operations beyond own-account reads.
 
 ---
 
@@ -165,7 +165,7 @@ Identity verification alone shall therefore not imply that the account is curren
 
 Each login shall create an independent session with an absolute 7-day expiry. Access JWTs shall expire within 15 minutes and no later than that session deadline. Refresh rotation shall not extend the session.
 
-Protected requests shall validate JWT identity, current session ownership/state, and current account/profile permissions against PostgreSQL. Logout shall revoke only the current session; suspension or deactivation shall revoke the User's sessions atomically with the account-status change. Reactivation shall require new login rather than restore revoked sessions.
+Protected requests shall validate JWT identity, current session ownership/state, and current account/profile permissions against PostgreSQL. Logout shall revoke only the current session; suspension or deactivation shall revoke the User's existing sessions atomically with the account-status change. A new login may create a session for limited own-account access in any state. Reactivation shall never restore revoked sessions; valid sessions use current account permissions.
 
 Successful refresh shall atomically consume the previous token and create its replacement. Reuse of a consumed token shall revoke its session, with revocation committed despite the rejected request. Unknown tokens shall not revoke unrelated sessions. See [ADR-0012](adr/0012-authentication-sessions.md).
 
@@ -728,7 +728,7 @@ Only an authorized receptionist shall activate a PendingVerification patient aft
 
 An authorized administrator may change PendingVerification or Active to Suspended or Deactivated, change Suspended to Deactivated or Deactivated to Suspended, and reactivate Suspended or Deactivated as Active. Patient reactivation requires completed identity verification. Verification of a blocked patient shall not itself reactivate the account; an administrator must perform reactivation separately. No transition shall return an account to PendingVerification; other transitions shall be rejected.
 
-Suspended represents a temporary block and Deactivated an administrative account closure. Both deny protected operations and atomically revoke sessions; reactivation requires new login without restoring revoked sessions. Account-management operations shall never physically delete a persisted User or its profile. Preserve identifiers, employee registrations, patient verification records, and appointment history. Validate current state and permissions within the ADR-0005 transaction and lock protocol.
+Suspended represents a temporary block and Deactivated an administrative account closure. Both deny protected business operations except own-account reads and atomically revoke existing sessions; new logins permit limited own-account access. Reactivation never restores revoked sessions. Account-management operations shall never physically delete a persisted User or its profile. Preserve identifiers, employee registrations, patient verification records, and appointment history. Validate current state and permissions within the ADR-0005 transaction and lock protocol.
 
 ---
 

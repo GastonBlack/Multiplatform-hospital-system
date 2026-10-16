@@ -220,7 +220,7 @@ User.ProfileType identifies the single associated profile type. It does not repl
 
 Authorization distinguishes Patient, Doctor, Receptionist, and Administrator. The two staff roles are derived from StaffRole, not separate profile tables.
 
-Protected operations must account for current account status. PendingVerification patients may log in, refresh, log out, and read only their own account/profile, account and identity-verification status, and verification instructions. Deny other protected patient operations, including profile updates and appointment management. Public specialty and doctor information remains accessible. Booking and rescheduling require verified identity and an Active account. Suspended and Deactivated accounts cannot perform protected operations.
+All profiles and account states may log in, refresh a valid session, log out, and read their own account/profile and current status. Own-account endpoints derive User.Id from the validated JWT sub claim. Pending patients may also read identity-verification status and instructions. Other protected operations, including profile updates and appointment management, require an Active account plus role, ownership, and feature permissions. Public specialty and doctor information remains accessible. Booking and rescheduling additionally require verified identity.
 
 Patients coordinates receptionist-only initial activation after in-person verification. Users owns administrator-managed suspension, deactivation, and reactivation under the [Domain Model transition rules](DomainModel.md#state-rules); patient reactivation requires completed verification. All status mutations validate current permissions/state under ADR-0005. Account management provides status changes rather than physical deletion of persisted accounts/profiles, preserving their identifiers, verification records, employee registrations, and appointment history.
 
@@ -228,7 +228,7 @@ JWT access tokens have a maximum 15-minute lifetime and identify User.Id through
 
 Every protected request validates the JWT and reads session ownership/state and current account/profile permissions from PostgreSQL. Role claims do not replace current AccountStatus, ProfileType, StaffRole, ownership, or patient eligibility checks.
 
-Refresh tokens are opaque random credentials, stored only as SHA-256 hashes and rotated atomically while locking the session row. Reuse of a consumed token revokes its session. Logout revokes the current session; suspension/deactivation atomically revokes the User's sessions, with new login required after reactivation.
+Refresh tokens are opaque random credentials, stored only as SHA-256 hashes and rotated atomically while locking the session row. Reuse of a consumed token revokes its session. Logout revokes the current session; suspension/deactivation atomically revokes the User's existing sessions. A new login in any account state permits limited own-account access. Reactivation never restores revoked sessions; valid sessions use current permissions.
 
 These records belong to Authentication and are defined in [AuthenticationModel.md](AuthenticationModel.md) and [ADR-0012](adr/0012-authentication-sessions.md). Web refresh-cookie storage remains proposed pending deployment/CSRF details; signing-key design remains to be finalized.
 

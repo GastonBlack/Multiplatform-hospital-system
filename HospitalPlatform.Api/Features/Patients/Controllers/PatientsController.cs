@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using HospitalPlatform.Api.Features.Patients.DTOs;
 using HospitalPlatform.Api.Features.Patients.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -28,5 +30,17 @@ public class PatientsController : ControllerBase
     {
         var response = await _registrationService.RegisterAsync(request);
         return StatusCode(StatusCodes.Status201Created, response);
+    }
+
+    // //////////////////////////////////////////
+    // Current patient profile
+    // //////////////////////////////////////////
+    [Authorize(Policy = "AuthenticatedAccount", Roles = "Patient")]
+    [HttpGet("me")]
+    public async Task<ActionResult<GetPatientProfile>> GetPatientProfile()
+    {
+        var userId = Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var response = await _registrationService.GetPatientProfileAsync(userId);
+        return Ok(response);
     }
 }

@@ -44,6 +44,8 @@ The word **shall** indicates functionality required for Version 1.
 
 The system shall allow registered users to authenticate using their credentials.
 
+This applies to every profile and AccountStatus, including PendingVerification, Suspended, and Deactivated. Authentication permits read-only access to the caller's own account/profile and current status; it does not grant permission for other protected operations.
+
 Email-based login shall use the same NormalizeEmail policy as account creation and permitted email changes, as defined in BR-ACC-001: trim exterior whitespace, convert to lowercase independently of server culture, and reject internal whitespace without removing it.
 
 ---
@@ -130,23 +132,25 @@ PendingVerification patients shall be allowed to log in, refresh their session, 
 
 ## FR-AUTH-011 — Suspended Accounts
 
-The system shall prevent suspended users from performing protected operations.
+Suspended users may log in, refresh a valid session, log out, and read their own account/profile and status. The system shall prevent all other protected operations.
 
-Suspension shall revoke the User's sessions atomically with the AccountStatus change. Reactivation shall require a new login.
+Suspension shall revoke the User's existing sessions atomically with the AccountStatus change. A new login may create a session for limited own-account access. Revoked sessions shall never be restored.
 
 ---
 
 ## FR-AUTH-012 — Deactivated Accounts
 
-The system shall prevent deactivated users from performing protected operations.
+Deactivated users may log in, refresh a valid session, log out, and read their own account/profile and status. The system shall prevent all other protected operations.
 
-Deactivation shall revoke the User's sessions atomically with the AccountStatus change. Reactivation shall require a new login.
+Deactivation shall revoke the User's existing sessions atomically with the AccountStatus change. A new login may create a session for limited own-account access. Revoked sessions shall never be restored.
 
 ---
 
 ## FR-AUTH-013 — Current User Information
 
 The system shall allow an authenticated user to retrieve their own basic account and profile information.
+
+GET /api/users/me shall return the caller's basic User data and current AccountStatus for every profile and account state. GET /api/patients/me shall return only the caller's Patient profile, in every account state. Obtain User.Id from the validated JWT sub claim, not a client-supplied user identifier.
 
 ---
 
@@ -222,7 +226,7 @@ An authenticated patient shall be able to view their own profile.
 
 A patient shall be able to modify profile information that the system allows patients to manage directly.
 
-This protected operation requires an Active account; PendingVerification access to the patient's own profile is read-only.
+This protected operation requires an Active account; access to the patient's own profile in all other account states is read-only.
 
 Information considered sensitive or related to verified identity may require hospital staff intervention.
 
@@ -471,7 +475,7 @@ An administrator shall be able to change the status of eligible user accounts.
 
 The system shall enforce BR-ADM-004: administrators may suspend/deactivate PendingVerification or Active accounts, change between Suspended and Deactivated, and reactivate eligible Suspended or Deactivated accounts to Active. Patient reactivation shall require completed identity verification; only receptionists shall perform the initial PendingVerification-to-Active activation after verification. The system shall reject other transitions, including a return to PendingVerification.
 
-Suspension/deactivation shall revoke sessions atomically; reactivation shall require new login. Account-management operations shall not physically delete persisted accounts or profiles and shall preserve identifiers, verification records, employee registrations, and appointment history. Validate status transitions using current state and actor permissions under the ADR-0005 transaction and locks.
+Suspension/deactivation shall revoke existing sessions atomically; new logins in these states permit limited own-account access. Reactivation shall not restore revoked sessions; permissions of a valid session use current account state. Account-management operations shall not physically delete persisted accounts or profiles and shall preserve identifiers, verification records, employee registrations, and appointment history. Validate status transitions using current state and actor permissions under the ADR-0005 transaction and locks.
 
 ---
 

@@ -40,8 +40,7 @@ public class JwtSessionEvents : JwtBearerEvents
         }
 
         var user = await _db.Users.AsNoTracking().SingleOrDefaultAsync(user => user.Id == userId);
-        if (user == null || (user.AccountStatus != AccountStatus.Active &&
-            !(user.AccountStatus == AccountStatus.PendingVerification && user.ProfileType == ProfileType.Patient)))
+        if (user == null)
         {
             context.Fail("Account cannot authenticate.");
             return;

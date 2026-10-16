@@ -103,6 +103,10 @@ Custom trigger SQL lives in the migration; EF does not generate it from entity m
 
 AuthenticationService implements POST /api/auth/login and POST /api/auth/refresh; AuthenticationController also exposes protected POST /api/auth/logout and GET /api/auth/session. Login returns accessToken, refreshToken, accessTokenExpiresAt, and sessionExpiresAt. Refresh accepts the exact refreshToken in a JSON body and replaces it. Logout returns 204 and revokes the current session. Send access tokens only in the Authorization: Bearer header over HTTPS.
 
+Credentials and valid sessions are accepted for every account state, including PendingVerification, Suspended, and Deactivated. AuthenticatedAccount permits authentication lifecycle operations and read-only own-account access. The default policy still requires Active for other protected operations. JWT signature, issuer, audience, expiry, session ownership, and revocation checks remain enforced; current roles and status come from PostgreSQL.
+
+GET /api/users/me returns the caller's UserId, FirstName, LastName, Email, ProfileType, and AccountStatus for any profile or account state. ProfileType and AccountStatus are text. GET /api/patients/me requires the Patient role and returns the caller's patient data and AccountStatus as text in every state. Both derive User.Id from the validated sub claim instead of accepting a user ID. PatientsController delegates to IPatientRegistrationService.GetPatientProfileAsync; UsersController delegates to IUserProfileService.GetProfileAsync. Neither response contains password data.
+
 To inspect the current session, send the following request to the API's HTTPS address, replacing `<accessToken>` with the value returned by login:
 
 ```http
@@ -147,7 +151,7 @@ Locally, start Docker Desktop and run docker compose up -d --wait. Tests first r
 
 Fact marks a single test; Theory plus InlineData runs the same test with several inputs. The suite covers successful registration and persisted ownership/state, canonical email, leading zeros, UTC timestamps, password hash verification, a response without password/hash fields, invalid input and malformed/missing JSON, duplicate email/identification rollback, and concurrent duplicate-email registrations. Cancellation-token plumbing is intentionally omitted; only the corresponding xUnit1051 recommendation is suppressed in the test project.
 
-Authentication tests cover credential rejection, JWT signing/issuer/audience/expiry and session ownership, refresh hashes and absolute expiry, rotation, consumed-token reuse, concurrent refresh, unknown tokens, independent logins, logout, blocked accounts, expired sessions, and current permissions overriding stale JWT claims. The full local suite passed 34 cases; the strengthened stale-permission cases were also run separately after the final change. GitHub Actions runs these same committed feature suites after push.
+Authentication tests cover credential rejection, JWT signing/issuer/audience/expiry and session ownership, refresh hashes and absolute expiry, rotation, consumed-token reuse, concurrent refresh, unknown tokens, independent logins, logout, authentication in non-active account states without active-operation permissions, expired sessions, and current permissions overriding stale JWT claims. Features/Patients/PatientProfileTests.cs covers own-patient reads in every account state and role restrictions. Features/Users/UserProfileTests.cs covers own-account reads across all four roles and their account states, isolation between accounts, absent/invalid tokens, and revocation after logout. GitHub Actions runs these committed feature suites after push.
 
 To build and run tests locally from the repository root:
 

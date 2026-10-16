@@ -95,7 +95,7 @@ Each User is associated with exactly one:
 - Each User has exactly one profile type in Version 1.
 - ProfileType is Patient, Doctor, or Staff and must match the associated profile. It is distinct from StaffRole.
 - AccountStatus belongs to User rather than being duplicated in each profile.
-- Suspended and deactivated accounts cannot perform protected operations.
+- Suspended and deactivated accounts may authenticate and read their own account/profile and status, but cannot perform other protected operations.
 
 ### ProfileType
 
@@ -141,13 +141,13 @@ For patients, booking and rescheduling additionally require successful identity 
 
 ### Suspended
 
-The account cannot perform protected operations.
+The account may log in, refresh a valid session, log out, and read its own account/profile and status. Other protected operations are denied.
 
 Suspension is a temporary access block. It does not remove the profile or its stored information.
 
 ### Deactivated
 
-The account cannot perform protected operations.
+The account may log in, refresh a valid session, log out, and read its own account/profile and status. Other protected operations are denied.
 
 Deactivation is an administrative account closure. It does not delete the account, profile, identifiers, verification record, or appointment history; an administrator may reactivate an eligible account.
 
@@ -156,7 +156,7 @@ Deactivation is an administrative account closure. It does not delete the accoun
 - Only an authorized receptionist may activate a PendingVerification patient after successful in-person identity verification.
 - Identity verification does not automatically reactivate a Suspended or Deactivated account.
 - Only an authorized administrator may suspend, deactivate, or reactivate an account. A patient may return to Active only if already identity-verified.
-- Suspension/deactivation revokes the User's sessions atomically with the status change. Reactivation requires a new login and does not restore revoked sessions.
+- Suspension/deactivation revokes the User's existing sessions atomically with the status change. New logins in any state permit own-account reads. Reactivation does not restore revoked sessions; valid sessions use current permissions.
 - Persisted accounts and their associated profiles are never physically deleted through application account-management operations. Status changes preserve identifiers, verification records, and appointment history.
 
 | Current status | Target status | Authorized actor and condition |

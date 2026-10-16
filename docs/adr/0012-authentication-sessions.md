@@ -50,13 +50,13 @@ Authentication owns these records. They are technical authentication persistence
 
 ### Current Access and Logout
 
-On every authenticated protected request, load the referenced session and current account/profile authorization data from PostgreSQL. Reject expired or revoked sessions, mismatched session ownership, and Suspended or Deactivated accounts.
+On every authenticated protected request, load the referenced session and current account/profile authorization data from PostgreSQL. Reject expired or revoked sessions and mismatched session ownership. AccountStatus alone does not reject authentication: every profile and account state may log in, refresh a valid session, log out, and read its own account/profile and current status.
 
 PendingVerification patients may log in, refresh their session, log out, and read only their own account/profile, account and identity-verification status, and verification instructions. Deny other protected patient operations, including profile updates and appointment management. Public specialty and doctor information remains accessible. Booking and rescheduling require verified identity and an Active account, evaluated from current data rather than JWT claims. Activation does not require replacing the existing session.
 
 Logout revokes the current session and removes its client credentials. Subsequent requests using its access token are rejected through the session check rather than waiting for JWT expiry. Requests already executing still require each write workflow's normal concurrency validation.
 
-Suspension or deactivation revokes the User's sessions atomically with the status change. Reactivation requires a new login. Current permission checks prevent old role information from granting access after StaffRole changes.
+Suspension or deactivation revokes the User's existing sessions atomically with the status change. Users may log in again while Suspended or Deactivated for limited own-account access; other protected operations require Active status and their role/ownership permissions. Reactivation never restores revoked sessions, while a valid session uses current account state. Current permission checks prevent old role information from granting access after StaffRole changes.
 
 ### Client Storage
 

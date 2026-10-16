@@ -41,12 +41,6 @@ public class AuthenticationService : IAuthenticationService
     // //////////////////////////////////////////
     // Helpers
     // //////////////////////////////////////////
-    private static bool CanAuthenticate(User user)
-    {
-        return user.AccountStatus == AccountStatus.Active ||
-            (user.AccountStatus == AccountStatus.PendingVerification && user.ProfileType == ProfileType.Patient);
-    }
-
     private static byte[] HashRefreshToken(string token)
     {
         return SHA256.HashData(Encoding.UTF8.GetBytes(token));
@@ -58,7 +52,7 @@ public class AuthenticationService : IAuthenticationService
             $"SELECT * FROM \"Users\" WHERE \"Id\" = {userId} FOR SHARE")
             .AsNoTracking().SingleOrDefaultAsync();
 
-        if (user == null || !CanAuthenticate(user))
+        if (user == null)
             throw new UnauthorizedException("Account cannot authenticate.");
 
         return user;
@@ -136,9 +130,6 @@ public class AuthenticationService : IAuthenticationService
 
         if (user == null || _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password) == PasswordVerificationResult.Failed)
             throw new UnauthorizedException("Email or password is incorrect.");
-
-        if (!CanAuthenticate(user))
-            throw new UnauthorizedException("Account cannot authenticate.");
 
         var now = DateTimeOffset.UtcNow;
         var session = new AuthenticationSession { UserId = user.Id, CreatedAt = now, ExpiresAt = now.AddDays(SessionLifetimeDays) };

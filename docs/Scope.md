@@ -183,14 +183,14 @@ Version 1 will include the following functionality.
 - Role-based authorization.
 - Account status management.
 - Account activation and deactivation.
-- Receptionist-only initial patient activation after verification; administrator-managed suspension, deactivation, and eligible reactivation. Patient reactivation requires completed identity verification and a new login.
+- Receptionist-only initial patient activation after verification; administrator-managed suspension, deactivation, and eligible reactivation. Patient reactivation requires completed identity verification and never restores revoked sessions.
 - Account closure through status changes, preserving persisted accounts, profiles, identifiers, verification records, and appointment history; no physical account/profile deletion through account-management operations.
 - Protected API endpoints.
 - Authentication support for web and mobile clients.
 
 Each login creates an independent session, allowing web and mobile sessions for the same User. Access JWTs last at most 15 minutes; sessions expire absolutely 7 days after login. Refresh tokens rotate without extending session expiry.
 
-Protected requests check current session and account/profile authorization against PostgreSQL. Logout revokes the current session; suspension or deactivation revokes the User's sessions and reactivation requires a new login. See [ADR-0012](adr/0012-authentication-sessions.md).
+Protected requests check current session and account/profile authorization against PostgreSQL. Logout revokes the current session; suspension or deactivation revokes the User's existing sessions. Users may log in again in any account state for own-account access, and reactivation never restores revoked sessions. See [ADR-0012](adr/0012-authentication-sessions.md).
 
 User accounts may have states such as:
 
@@ -202,6 +202,8 @@ User accounts may have states such as:
 Patient account verification and general account status are related but conceptually separate concerns.
 
 `PendingVerification` patients may log in, refresh their session, log out, and read their own account/profile, account and identity-verification status, and verification instructions. Other protected patient operations, including profile updates and appointment management, are unavailable until activation. Public specialty and doctor information remains accessible. Booking and rescheduling require verified identity and an Active account.
+
+All profiles, including Suspended and Deactivated accounts, may authenticate, refresh a valid session, log out, and read their own account/profile and current status. These reads obtain the caller's identity from a validated JWT. Other protected operations remain subject to current account state, role, ownership, and feature permissions.
 
 A patient must have an active and identity-verified account before appointment booking or rescheduling functionality is enabled.
 

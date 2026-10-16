@@ -95,11 +95,11 @@ Protected resources shall enforce authorization on the backend.
 
 Authorization shall be consistent with the User's single Patient, Doctor, or Staff profile and, for Staff, its StaffRole. AccountStatus shall be evaluated independently of patient identity verification.
 
-PendingVerification patient access shall be restricted to login, session refresh, logout, and read-only access to their own account/profile, account and identity-verification status, and verification instructions. Deny other protected patient operations; public specialty and doctor information remains accessible. Suspended and Deactivated accounts shall not perform protected operations.
+All profiles and account states, including PendingVerification, Suspended, and Deactivated, shall permit login, valid-session refresh, logout, and read-only access to the caller's own account/profile and status. Pending patients may also read identity-verification status and instructions. Other protected operations require an Active account and appropriate role, ownership, and feature permissions; public specialty and doctor information remains accessible.
 
 Client-side UI restrictions shall not be considered a security boundary.
 
-Protected requests shall verify current session ownership/state and account/profile authorization in PostgreSQL, independently of stale JWT role information. Logout revokes the current session; account suspension/deactivation revokes all of the User's sessions atomically with the status change. This policy requires shared database authorization reads across API instances.
+Protected requests shall verify current session ownership/state and account/profile authorization in PostgreSQL, independently of stale JWT role information. Logout revokes the current session; account suspension/deactivation revokes all of the User's existing sessions atomically with the status change. New logins in any account state allow limited own-account access; revoked sessions are never restored. This policy requires shared database authorization reads across API instances.
 
 ---
 

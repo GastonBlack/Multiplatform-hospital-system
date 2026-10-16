@@ -262,9 +262,10 @@ public class AuthenticationTests : IAsyncLifetime
     }
 
     [Theory]
+    [InlineData(AccountStatus.PendingVerification)]
     [InlineData(AccountStatus.Suspended)]
     [InlineData(AccountStatus.Deactivated)]
-    public async Task BlockedAccount_CannotLoginRefreshOrUseExistingJwt(AccountStatus status)
+    public async Task NonActiveAccount_CanAuthenticateButCannotUseActiveEndpoints(AccountStatus status)
     {
         var tokens = await LoginAsync();
         using (var scope = _factory.Services.CreateScope())
@@ -275,11 +276,16 @@ public class AuthenticationTests : IAsyncLifetime
             await db.SaveChangesAsync();
         }
         using var login = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = "ana@example.com", Password = " Ab1!_? " });
-        Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         using var refresh = await RefreshAsync(tokens.RefreshToken);
-        Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
         using var session = await SendAuthenticatedAsync(HttpMethod.Get, "/api/auth/session", tokens.AccessToken);
-        Assert.Equal(HttpStatusCode.Unauthorized, session.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, session.StatusCode);
+        var currentSession = await session.Content.ReadFromJsonAsync<CurrentSessionResponse>();
+        Assert.NotNull(currentSession);
+        Assert.Equal(status, currentSession.AccountStatus);
+        using var denied = await SendAuthenticatedAsync(HttpMethod.Get, "/__tests/authorization/active", AddStalePermissions(tokens.AccessToken, "Patient"));
+        Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
     }
 
     [Fact]

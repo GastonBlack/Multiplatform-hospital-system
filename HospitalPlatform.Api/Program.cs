@@ -3,6 +3,7 @@ using HospitalPlatform.Api.Features.Authentication.Services;
 using HospitalPlatform.Api.Features.Authentication.Settings;
 using HospitalPlatform.Api.Features.Patients.Services;
 using HospitalPlatform.Api.Features.Users.Models;
+using HospitalPlatform.Api.Features.Users.Services;
 using HospitalPlatform.Api.Infrastructure.Middleware;
 using HospitalPlatform.Api.Infrastructure.Persistence;
 using HospitalPlatform.Api.Infrastructure.Security;
@@ -30,6 +31,7 @@ builder.Services.AddDbContext<HospitalDbContext>(options =>
 // //////////////////////////////////////////
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IPatientRegistrationService, PatientRegistrationService>();
+builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
 // //////////////////////////////////////////
 // Authentication

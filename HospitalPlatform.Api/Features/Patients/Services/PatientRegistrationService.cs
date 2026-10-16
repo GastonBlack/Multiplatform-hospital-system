@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Runtime;
 using HospitalPlatform.Api.Features.Patients.DTOs;
 using HospitalPlatform.Api.Features.Patients.Models;
 using HospitalPlatform.Api.Features.Users.Models;
@@ -85,5 +86,27 @@ public class PatientRegistrationService : IPatientRegistrationService
             PatientId = patient.Id,
             AccountStatus = user.AccountStatus
         };
+    }
+
+
+    public async Task<GetPatientProfile> GetPatientProfileAsync(Guid userGuid)
+    {
+        var patientProfile = await(
+            from patient in _db.Patients
+            join user in _db.Users on patient.UserId equals user.Id
+            where patient.UserId == userGuid
+            select new GetPatientProfile
+            {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                NationalIdentificationNumber = patient.NationalIdentificationNumber,
+                PhoneNumber = patient.PhoneNumber,
+                DateOfBirth = patient.DateOfBirth,
+                AccountStatus = user.AccountStatus.ToString()
+            }
+        ).SingleOrDefaultAsync();
+
+        return patientProfile ?? throw new NotFoundException("Patient not found.");
     }
 }

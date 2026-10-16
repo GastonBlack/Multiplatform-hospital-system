@@ -5,4 +5,5 @@ namespace HospitalPlatform.Api.Features.Patients.Services;
 public interface IPatientRegistrationService
 {
     Task<RegisterPatientResponse> RegisterAsync(RegisterPatientRequest request);
+    Task<GetPatientProfile> GetPatientProfileAsync(Guid userGuid);
 }
