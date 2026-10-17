@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Runtime;
 using HospitalPlatform.Api.Features.Patients.DTOs;
 using HospitalPlatform.Api.Features.Patients.Models;
 using HospitalPlatform.Api.Features.Users.Models;
