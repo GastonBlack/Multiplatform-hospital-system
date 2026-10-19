@@ -88,12 +88,12 @@ public class PatientRegistrationService : IPatientRegistrationService
     }
 
 
-    public async Task<GetPatientProfile> GetPatientProfileAsync(Guid userGuid)
+    public async Task<GetPatientProfile> GetPatientProfileAsync(Guid userId)
     {
         var patientProfile = await(
             from patient in _db.Patients
             join user in _db.Users on patient.UserId equals user.Id
-            where patient.UserId == userGuid
+            where patient.UserId == userId
             select new GetPatientProfile
             {
                 FirstName = user.FirstName,
