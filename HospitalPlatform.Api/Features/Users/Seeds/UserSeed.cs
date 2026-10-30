@@ -1,8 +1,6 @@
-using System.Globalization;
 using HospitalPlatform.Api.Features.Users.Models;
 using HospitalPlatform.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace HospitalPlatform.Api.Features.Users.Seeds;
 
@@ -25,14 +23,5 @@ public static class UserSeed
         user.PasswordHash = passwordHasher.HashPassword(user, password);
         db.Users.Add(user);
         return user;
-    }
-
-    public static async Task<string> ConfigureEmployeeNumberAsync(HospitalDbContext db, Guid userId)
-    {
-        var number = await db.Database.SqlQueryRaw<long>(
-            "SELECT nextval('\"EmployeeNumberSequence\"') AS \"Value\"").SingleAsync();
-        var employeeNumber = "EMP-" + number.ToString("D6", CultureInfo.InvariantCulture);
-        db.EmployeeNumbers.Add(new EmployeeNumberRegistration { UserId = userId, EmployeeNumber = employeeNumber });
-        return employeeNumber;
     }
 }

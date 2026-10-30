@@ -2,6 +2,7 @@ using HospitalPlatform.Api.Features.Staff.Models;
 using HospitalPlatform.Api.Features.Staff.Seeds;
 using HospitalPlatform.Api.Features.Users.Models;
 using HospitalPlatform.Api.Features.Users.Seeds;
+using HospitalPlatform.Api.Features.Users.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,7 +27,7 @@ public static class DatabaseSeed
             throw new ArgumentException("Administrator password must be between 6 and 12 characters, as required by login.", nameof(password));
 
         var user = UserSeed.ConfigureUser(db, passwordHasher, password);
-        var employeeNumber = await UserSeed.ConfigureEmployeeNumberAsync(db, user.Id);
+        var employeeNumber = await EmployeeNumberService.RegisterAsync(db, user.Id);
         StaffSeed.ConfigureAdministrator(db, user.Id, employeeNumber);
 
         await db.SaveChangesAsync();

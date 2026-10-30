@@ -18,7 +18,7 @@ Public patient registration is implemented in PatientRegistrationService, behind
 
 ExceptionHandlingMiddleware is registered before the remaining HTTP middleware. Custom AppException types carry the expected status and error code; ValidationException maps to 400 and DbUpdateConcurrencyException maps to 409. Unknown errors, including other DbUpdateException, InvalidOperationException, and ArgumentException failures, map to 500. ErrorResponse uses camelCase JSON and includes error, message, statusCode, traceId, and a UTC timestamp. Unexpected exception messages are exposed only in Development; Production returns a generic message. Errors are logged, and an already-started response is not overwritten.
 
-PatientsController exposes public POST /api/patients/register and calls IPatientRegistrationService. Successful registration returns 201 with UserId, PatientId, and AccountStatus, without passwords, hashes, or tokens. AccountStatus currently uses the default numeric enum serialization (1 means PendingVerification). ApiController validates request DTOs and returns automatic 400 ValidationProblemDetails responses for invalid input or malformed JSON before invoking the service. Known duplicates become 409 ErrorResponse responses through the exception middleware. These are different error-body shapes; clients should use the HTTP status and the corresponding response fields. Receptionist/employee registration workflows remain subsequent implementation steps. Registration does not automatically log the patient in. Do not use EnsureCreated. Check-digit arithmetic remains out of scope.
+PatientsController exposes public POST /api/patients/register and calls IPatientRegistrationService. Successful registration returns 201 with UserId, PatientId, and AccountStatus, without passwords, hashes, or tokens. AccountStatus currently uses the default numeric enum serialization (1 means PendingVerification). ApiController validates request DTOs and returns automatic 400 ValidationProblemDetails responses for invalid input or malformed JSON before invoking the service. Known duplicates become 409 ErrorResponse responses through the exception middleware. These are different error-body shapes; clients should use the HTTP status and the corresponding response fields. Receptionist-created patient and doctor registration workflows remain subsequent implementation steps. Registration does not automatically log the patient in. Do not use EnsureCreated. Check-digit arithmetic remains out of scope.
 
 Example request body:
 
@@ -115,7 +115,7 @@ Custom trigger SQL lives in the migration; EF does not generate it from entity m
 
 ## Initial Administrator Seed
 
-DatabaseSeed in Infrastructure/Persistence/Seeds coordinates initial data in one transaction. Feature seeds live under Features/Users/Seeds/UserSeed.cs and Features/Staff/Seeds/StaffSeed.cs. UserSeed creates the account and registers its sequence-generated employee number; StaffSeed creates the matching Administrator profile. Entity configurations and OnModelCreating only define the schema, without inserting accounts or generating password hashes.
+DatabaseSeed in Infrastructure/Persistence/Seeds coordinates initial data in one transaction. Feature seeds live under Features/Users/Seeds/UserSeed.cs and Features/Staff/Seeds/StaffSeed.cs. UserSeed creates the account, EmployeeNumberService registers its sequence-generated employee number, and StaffSeed creates the matching Administrator profile. Entity configurations and OnModelCreating only define the schema, without inserting accounts or generating password hashes.
 
 Configure the initial password in development user-secrets, replacing the placeholder with your chosen password of 6-12 characters, matching LoginRequest:
 
@@ -136,6 +136,30 @@ The initial account uses FirstName Default, LastName Administrator, email admini
 If any Administrator profile already exists, seeding leaves accounts, credentials, statuses, and employee numbers unchanged. A transaction-scoped Staff table lock serializes concurrent initialization. Account, employee registration, and Staff profile commit together; uniqueness or deferred-constraint failures roll the entire seed back. The seed never converts an existing patient or doctor account to administrator.
 
 Infrastructure/DatabaseSeedTests.cs covers concurrent and repeated runs, preserved credentials and account state, login and administrator authorization with the generated account, rejected passwords, sequence values beyond six digits, and rollback when the seed email belongs to a patient. Tests use isolated databases and never seed hospital_platform.
+
+## Staff Registration
+
+POST /api/staff/register creates receptionists and administrators through StaffController and IStaffRegistrationService. It requires a valid JWT, the current Administrator role, and an Active account under the default authorization policy. Missing or invalid authentication returns 401; other roles and non-active administrators receive 403. Roles and account state are read from PostgreSQL on every protected request, including requests using an older JWT.
+
+In Swagger, log in with an active administrator and paste the accessToken into Authorize before sending this request:
+
+```json
+{
+  "firstName": "Ana",
+  "lastName": "Perez",
+  "email": "ana.reception@example.com",
+  "password": "Ab1!_?xy",
+  "staffRole": "Receptionist"
+}
+```
+
+Use Receptionist or Administrator for staffRole. Names require 2-120 characters, email at most 150 characters and the shared normalization policy, and password 6-12 characters without trimming. Invalid roles, missing fields, and invalid input return 400. A duplicate email across any profile returns 409.
+
+The service creates an Active User with ProfileType Staff, hashes the password with PasswordHasher<User>, and saves the account, EmployeeNumbers registration, and Staff profile in one transaction. EmployeeNumberService in Features/Users/Services is shared with the initial administrator seed and allocates numbers from EmployeeNumberSequence. Sequence values are padded to at least six digits, without truncation; rolled-back allocations may leave gaps. Clients cannot assign identifiers, employee numbers, profile types, or account states.
+
+The 201 response contains userId, staffId, employeeNumber, staffRole, and accountStatus. Role and account status are text; passwords, hashes, and tokens are omitted. The new employee can then use POST /api/auth/login and GET /api/users/me. No schema migration is required.
+
+Features/Staff/StaffRegistrationTests.cs verifies creation and login for both roles, permissions and current authorization changes, validation, server-owned values, duplicate-email rollback without recycling the number, concurrent duplicate emails, and concurrent staff/doctor number allocation beyond six digits. Doctor allocation uses a test fixture because its registration endpoint is not implemented yet. These tests use only the isolated databases created by HospitalApiFactory.
 
 ## Authentication
 
