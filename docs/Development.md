@@ -80,6 +80,20 @@ Program.cs groups dependency registration into Database, Feature Services, Authe
 
 Timestamp instants must be assigned in UTC. Hospital-local display and scheduling rules use America/Montevideo. DateOfBirth remains DateOnly.
 
+## Swagger UI
+
+Start the API with the HTTPS development profile:
+
+```powershell
+dotnet run --project HospitalPlatform.Api --launch-profile https
+```
+
+This profile opens https://localhost:7109/swagger. Swagger UI uses the existing ASP.NET Core OpenAPI document at /openapi/v1.json. Both the UI and the document are exposed only in Development.
+
+Use POST /api/auth/login with an existing account, copy accessToken from the response, and paste only that token into the Authorize dialog. Swagger adds the Authorization: Bearer header when calling protected operations. Registration, login, and refresh remain anonymous in the document; refresh still accepts refreshToken in its JSON request body. API authorization, session revocation, and account-state rules continue to apply to requests made through Swagger.
+
+Infrastructure/OpenApiTests.cs verifies the UI, JavaScript assets, and document are available only in Development, and that JWT bearer requirements are documented only on protected endpoints. These tests supply isolated configuration and require no PostgreSQL connection.
+
 ## Migrations
 
 Restore the repository-local EF tool on a fresh checkout, then apply pending migrations after configuring the connection and starting PostgreSQL:
