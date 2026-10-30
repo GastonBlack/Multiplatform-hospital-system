@@ -6,6 +6,7 @@ using HospitalPlatform.Api.Features.Users.Models;
 using HospitalPlatform.Api.Features.Users.Services;
 using HospitalPlatform.Api.Infrastructure.Middleware;
 using HospitalPlatform.Api.Infrastructure.Persistence;
+using HospitalPlatform.Api.Infrastructure.Persistence.Seeds;
 using HospitalPlatform.Api.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -97,6 +98,25 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
+
+// //////////////////////////////////////////
+// Database seed
+// //////////////////////////////////////////
+if (app.Configuration.GetValue<bool>("seed"))
+{
+    var password = app.Configuration["DatabaseSeed:Administrator:Password"]
+        ?? throw new InvalidOperationException("Configure DatabaseSeed:Administrator:Password before running the database seed.");
+    await using (var scope = app.Services.CreateAsyncScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<HospitalDbContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
+        await db.Database.MigrateAsync();
+        await DatabaseSeed.SeedAsync(db, passwordHasher, password);
+    }
+    app.Logger.LogInformation("Database seed completed.");
+    await app.DisposeAsync();
+    return;
 }
 
 // //////////////////////////////////////////

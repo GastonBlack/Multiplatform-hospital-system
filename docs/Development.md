@@ -8,7 +8,7 @@ HospitalDbContext exposes Users and Patients and loads their IEntityTypeConfigur
 
 HospitalDbContext also exposes Doctors, Staff, and EmployeeNumbers. Doctor and Staff use fixed profile discriminators and unique UserId values. EmployeeNumbers has EmployeeNumber as its primary key, a unique UserId, and an alternate composite key (EmployeeNumber, UserId). Employee profile foreign keys reference that pair so a profile cannot use another account's employee number. Medical licenses are unique, StaffRole is constrained text, and these relationships use restrictive deletion.
 
-The InitialAccounts migration creates these five tables, their constraints, and EmployeeNumberSequence (bigint, starting at 1, incrementing by 1, without cycling). Number allocation and canonical formatting still belong to the future registration workflow; the sequence alone does not assign EmployeeNumber values.
+The InitialAccounts migration creates these five tables, their constraints, and EmployeeNumberSequence (bigint, starting at 1, incrementing by 1, without cycling). The initial administrator seed now allocates and formats employee numbers through this sequence; general employee registration remains pending.
 
 Deferred constraint triggers require a matching profile when a transaction commits. Immediate keys prevent multiple or mismatched profiles. Profile mutations lock the affected User rows in UUID order before changing the profile; deferred checks read the final state under READ COMMITTED. Account/profile creation must use one transaction, including the employee registry for Doctor and Staff. Validation can fail at commit even after SaveChanges succeeds. TRUNCATE is rejected on all five tables. Production application credentials must not own the schema or have privileges to disable triggers.
 
@@ -98,6 +98,30 @@ dotnet ef migrations add <DescriptiveName> --project HospitalPlatform.Api --outp
 ```
 
 Custom trigger SQL lives in the migration; EF does not generate it from entity mappings. Future changes to these guarantees require an explicit migration. The API does not automatically migrate on startup.
+
+## Initial Administrator Seed
+
+DatabaseSeed in Infrastructure/Persistence/Seeds coordinates initial data in one transaction. Feature seeds live under Features/Users/Seeds/UserSeed.cs and Features/Staff/Seeds/StaffSeed.cs. UserSeed creates the account and registers its sequence-generated employee number; StaffSeed creates the matching Administrator profile. Entity configurations and OnModelCreating only define the schema, without inserting accounts or generating password hashes.
+
+Configure the initial password in development user-secrets, replacing the placeholder with your chosen password of 6-12 characters, matching LoginRequest:
+
+```powershell
+dotnet user-secrets set "DatabaseSeed:Administrator:Password" "<your-local-administrator-password>" --project HospitalPlatform.Api
+```
+
+With PostgreSQL running and the existing connection configuration in place, execute:
+
+```powershell
+dotnet run --project HospitalPlatform.Api -- --environment Development --seed true
+```
+
+This explicit initialization command applies pending migrations, executes DatabaseSeed.SeedAsync, and exits without starting the HTTP server. Normal API startup does not migrate or seed the database. Other environments must supply the seed password through protected configuration rather than development user-secrets.
+
+The initial account uses FirstName Default, LastName Administrator, email administrator0101@gmail.com, ProfileType Staff, AccountStatus Active, and StaffRole Administrator. PasswordHasher<User> hashes the supplied password; no plaintext password or fixed hash is stored in source. EmployeeNumber comes from EmployeeNumberSequence and is formatted as EMP- plus at least six decimal digits.
+
+If any Administrator profile already exists, seeding leaves accounts, credentials, statuses, and employee numbers unchanged. A transaction-scoped Staff table lock serializes concurrent initialization. Account, employee registration, and Staff profile commit together; uniqueness or deferred-constraint failures roll the entire seed back. The seed never converts an existing patient or doctor account to administrator.
+
+Infrastructure/DatabaseSeedTests.cs covers concurrent and repeated runs, preserved credentials and account state, login and administrator authorization with the generated account, rejected passwords, sequence values beyond six digits, and rollback when the seed email belongs to a patient. Tests use isolated databases and never seed hospital_platform.
 
 ## Authentication
 
