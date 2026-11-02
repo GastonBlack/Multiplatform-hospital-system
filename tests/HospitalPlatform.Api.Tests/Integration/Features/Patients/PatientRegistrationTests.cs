@@ -5,13 +5,13 @@ using System.Text.Json;
 using HospitalPlatform.Api.Features.Patients.DTOs;
 using HospitalPlatform.Api.Features.Users.Models;
 using HospitalPlatform.Api.Infrastructure.Persistence;
-using HospitalPlatform.Api.IntegrationTests.Infrastructure;
+using HospitalPlatform.Api.Tests.Shared.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace HospitalPlatform.Api.IntegrationTests.Features.Patients;
+namespace HospitalPlatform.Api.Tests.Integration.Features.Patients;
 
 public class PatientRegistrationTests : IAsyncLifetime
 {

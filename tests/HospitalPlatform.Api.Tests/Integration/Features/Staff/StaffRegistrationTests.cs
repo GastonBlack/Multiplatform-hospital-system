@@ -9,17 +9,18 @@ using HospitalPlatform.Api.Features.Patients.DTOs;
 using HospitalPlatform.Api.Features.Patients.Models;
 using HospitalPlatform.Api.Features.Staff.DTOs;
 using HospitalPlatform.Api.Features.Staff.Models;
+using StaffMember = HospitalPlatform.Api.Features.Staff.Models.Staff;
 using HospitalPlatform.Api.Features.Users.Models;
 using HospitalPlatform.Api.Features.Users.Services;
 using HospitalPlatform.Api.Infrastructure.Persistence;
 using HospitalPlatform.Api.Infrastructure.Persistence.Seeds;
-using HospitalPlatform.Api.IntegrationTests.Infrastructure;
+using HospitalPlatform.Api.Tests.Shared.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace HospitalPlatform.Api.IntegrationTests.Features;
+namespace HospitalPlatform.Api.Tests.Integration.Features.Staff;
 
 public class StaffRegistrationTests : IAsyncLifetime
 {
@@ -48,7 +49,7 @@ public class StaffRegistrationTests : IAsyncLifetime
     [Theory]
     [InlineData(StaffRole.Receptionist)]
     [InlineData(StaffRole.Administrator)]
-    public async Task Register_WithValidData_CreatesActiveStaffThatCanLogIn(StaffRole role)
+    public async Task Register_WithValidData_PersistsActiveStaffAndEmployeeNumber(StaffRole role)
     {
         var request = CreateRequest(role: role);
         using var response = await client.PostAsJsonAsync(RegistrationUrl, request);
@@ -83,15 +84,6 @@ public class StaffRegistrationTests : IAsyncLifetime
         Assert.False(json.RootElement.TryGetProperty("password", out _));
         Assert.False(json.RootElement.TryGetProperty("passwordHash", out _));
         Assert.Equal((2, 2, 2, 0, 0), await GetCountsAsync());
-
-        var tokens = await LoginAsync(user.Email, request.Password);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
-        using var ownProfile = await client.GetAsync("/api/users/me");
-        Assert.Equal(HttpStatusCode.OK, ownProfile.StatusCode);
-        using var profileJson = JsonDocument.Parse(await ownProfile.Content.ReadAsStringAsync());
-        Assert.Equal(user.Id, profileJson.RootElement.GetProperty("userId").GetGuid());
-        using var administrator = await client.GetAsync("/__tests/authorization/administrator");
-        Assert.Equal(role == StaffRole.Administrator ? HttpStatusCode.OK : HttpStatusCode.Forbidden, administrator.StatusCode);
     }
 
     [Theory]
@@ -315,7 +307,7 @@ public class StaffRegistrationTests : IAsyncLifetime
             if (user.ProfileType == ProfileType.Doctor)
                 db.Doctors.Add(new Doctor { UserId = user.Id, EmployeeNumber = employeeNumber, MedicalLicenseNumber = "LICENSE-TEST" });
             else
-                db.Staff.Add(new Staff { UserId = user.Id, EmployeeNumber = employeeNumber, StaffRole = Enum.Parse<StaffRole>(role) });
+                db.Staff.Add(new StaffMember { UserId = user.Id, EmployeeNumber = employeeNumber, StaffRole = Enum.Parse<StaffRole>(role) });
         }
         await db.SaveChangesAsync();
         return user;

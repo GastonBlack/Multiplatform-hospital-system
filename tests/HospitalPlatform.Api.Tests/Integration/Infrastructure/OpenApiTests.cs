@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace HospitalPlatform.Api.IntegrationTests.Infrastructure;
+namespace HospitalPlatform.Api.Tests.Integration.Infrastructure;
 
 public class OpenApiTests
 {

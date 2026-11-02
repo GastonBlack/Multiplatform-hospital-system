@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
-namespace HospitalPlatform.Api.IntegrationTests.Infrastructure;
+namespace HospitalPlatform.Api.Tests.Shared.Infrastructure;
 
 public class HospitalApiFactory : WebApplicationFactory<Program>
 {

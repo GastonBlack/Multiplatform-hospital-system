@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitalPlatform.Api", "Hos
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitalPlatform.Api.IntegrationTests", "tests\HospitalPlatform.Api.IntegrationTests\HospitalPlatform.Api.IntegrationTests.csproj", "{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitalPlatform.Api.Tests", "tests\HospitalPlatform.Api.Tests\HospitalPlatform.Api.Tests.csproj", "{00B4E0D5-66AC-4BDE-B721-781F634BA7BF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

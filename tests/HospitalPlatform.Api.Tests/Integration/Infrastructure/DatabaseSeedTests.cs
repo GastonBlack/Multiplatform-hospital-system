@@ -7,12 +7,13 @@ using HospitalPlatform.Api.Features.Staff.Models;
 using HospitalPlatform.Api.Features.Users.Models;
 using HospitalPlatform.Api.Infrastructure.Persistence;
 using HospitalPlatform.Api.Infrastructure.Persistence.Seeds;
+using HospitalPlatform.Api.Tests.Shared.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace HospitalPlatform.Api.IntegrationTests.Infrastructure;
+namespace HospitalPlatform.Api.Tests.Integration.Infrastructure;
 
 public class DatabaseSeedTests : IAsyncLifetime
 {

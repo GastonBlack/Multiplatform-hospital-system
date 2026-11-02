@@ -92,7 +92,7 @@ This profile opens https://localhost:7109/swagger. Swagger UI uses the existing 
 
 Use POST /api/auth/login with an existing account, copy accessToken from the response, and paste only that token into the Authorize dialog. Swagger adds the Authorization: Bearer header when calling protected operations. Registration, login, and refresh remain anonymous in the document; refresh still accepts refreshToken in its JSON request body. API authorization, session revocation, and account-state rules continue to apply to requests made through Swagger.
 
-Infrastructure/OpenApiTests.cs verifies the UI, JavaScript assets, and document are available only in Development, and that JWT bearer requirements are documented only on protected endpoints. These tests supply isolated configuration and require no PostgreSQL connection.
+Integration/Infrastructure/OpenApiTests.cs verifies the UI, JavaScript assets, and document are available only in Development, and that JWT bearer requirements are documented only on protected endpoints. These tests supply isolated configuration and require no PostgreSQL connection.
 
 ## Migrations
 
@@ -135,7 +135,7 @@ The initial account uses FirstName Default, LastName Administrator, email admini
 
 If any Administrator profile already exists, seeding leaves accounts, credentials, statuses, and employee numbers unchanged. A transaction-scoped Staff table lock serializes concurrent initialization. Account, employee registration, and Staff profile commit together; uniqueness or deferred-constraint failures roll the entire seed back. The seed never converts an existing patient or doctor account to administrator.
 
-Infrastructure/DatabaseSeedTests.cs covers concurrent and repeated runs, preserved credentials and account state, login and administrator authorization with the generated account, rejected passwords, sequence values beyond six digits, and rollback when the seed email belongs to a patient. Tests use isolated databases and never seed hospital_platform.
+Integration/Infrastructure/DatabaseSeedTests.cs covers concurrent and repeated runs, preserved credentials and account state, login and administrator authorization with the generated account, rejected passwords, sequence values beyond six digits, and rollback when the seed email belongs to a patient. Tests use isolated databases and never seed hospital_platform.
 
 ## Staff Registration
 
@@ -159,7 +159,7 @@ The service creates an Active User with ProfileType Staff, hashes the password w
 
 The 201 response contains userId, staffId, employeeNumber, staffRole, and accountStatus. Role and account status are text; passwords, hashes, and tokens are omitted. The new employee can then use POST /api/auth/login and GET /api/users/me. No schema migration is required.
 
-Features/Staff/StaffRegistrationTests.cs verifies creation and login for both roles, permissions and current authorization changes, validation, server-owned values, duplicate-email rollback without recycling the number, concurrent duplicate emails, and concurrent staff/doctor number allocation beyond six digits. Doctor allocation uses a test fixture because its registration endpoint is not implemented yet. These tests use only the isolated databases created by HospitalApiFactory.
+Integration/Features/Staff/StaffRegistrationTests.cs verifies persisted creation for both roles, permissions and current authorization changes, validation, server-owned values, duplicate-email rollback without recycling the number, concurrent duplicate emails, and concurrent staff/doctor number allocation beyond six digits. Functional/Features/Staff/StaffRegistrationFlowTests.cs verifies registration, employee login, own-profile reads, assigned permissions, and logout through production HTTP endpoints. Doctor allocation uses a test fixture because its registration endpoint is not implemented yet. These tests use only the isolated databases created by HospitalApiFactory.
 
 ## Authentication
 
@@ -201,21 +201,21 @@ dotnet build HospitalPlatform.sln --configuration Release --no-restore
 dotnet test --solution HospitalPlatform.sln --configuration Release --no-build --no-restore
 ```
 
-The CI job starts a PostgreSQL 18.6 service container, restores dependencies, builds the solution, and runs the integration tests. Its hardcoded database credentials belong only to the disposable test container; they are not application credentials. The GitHub run must still be checked after pushing.
+The CI job starts a PostgreSQL 18.6 service container, restores dependencies, builds the solution, and runs unit, integration, and functional tests. Its hardcoded database credentials belong only to the disposable test container; they are not application credentials. The GitHub run must still be checked after pushing.
 
-## Integration Tests
+## Automated Tests
 
-tests/HospitalPlatform.Api.IntegrationTests uses xUnit (xunit.v3 package) and Microsoft.AspNetCore.Mvc.Testing. Test suites are organized by feature: Features/Patients/PatientRegistrationTests.cs covers patient registration and Features/Authentication/AuthenticationTests.cs covers authentication. Infrastructure/HospitalApiFactory.cs owns the shared test host, isolated signing key, and database setup. AuthorizationProbeController is loaded only by that host to exercise active-account and administrator policies. WebApplicationFactory starts the real Program entry point with the Testing environment, configured exclusively for the generated test database. The public partial Program declaration makes that entry point accessible to tests. global.json selects Microsoft.Testing.Platform, the runner supported by the current xUnit package on .NET 10. The HTTPS client base address avoids testing HTTPS redirects instead of registration.
+All suites live in tests/HospitalPlatform.Api.Tests, organized first by type and then by feature. See [tests/README.md](../tests/README.md) for the directory tree, classification rules, and commands to run one type or feature.
 
-Each test case creates a new hospital_test_<random UUID> database, applies the real EF migrations, and calls the real HTTP controller, service, and exception middleware. Cleanup stops the test host before dropping that generated database. It does not truncate tables or modify hospital_platform. PostgreSQL credentials need permission to create and drop test databases.
+Unit/Features contains isolated tests without an HTTP host or database; Users/EmailNormalizerTests.cs verifies the email normalization policy. Integration/Features contains Authentication, Patients, Staff, and Users tests that exercise the real API and persisted state. Integration/Infrastructure covers database seeding and OpenAPI configuration. Functional/Features contains complete HTTP workflows; Staff/StaffRegistrationFlowTests.cs covers creating employees, login, own-profile reads, permissions, and logout, without querying persistence inside the scenario.
 
-Locally, start Docker Desktop and run docker compose up -d --wait. Tests first read HOSPITAL_TEST_CONNECTION_STRING when provided; otherwise they use the API's existing development connection secret for server credentials. The database name is replaced with a generated name. No password or connection string is committed for local development. CI supplies HOSPITAL_TEST_CONNECTION_STRING for its own PostgreSQL container.
+Shared/Infrastructure/HospitalApiFactory.cs owns the reusable host, isolated signing key, and database lifecycle. AuthorizationProbeController is loaded only by the test host for integration authorization checks. WebApplicationFactory starts the real Program entry point in Testing with the generated database; the public partial Program declaration exposes that entry point. The HTTPS client address avoids testing redirects instead of endpoint behavior. xUnit (xunit.v3) runs through Microsoft.Testing.Platform, selected in global.json.
 
-Fact marks a single test; Theory plus InlineData runs the same test with several inputs. The suite covers successful registration and persisted ownership/state, canonical email, leading zeros, UTC timestamps, password hash verification, a response without password/hash fields, invalid input and malformed/missing JSON, duplicate email/identification rollback, and concurrent duplicate-email registrations. Cancellation-token plumbing is intentionally omitted; only the corresponding xUnit1051 recommendation is suppressed in the test project.
+Each database-backed case creates a separate hospital_test_<random UUID> database, applies the actual EF migrations, and removes that database after stopping its host. Tests never seed or truncate hospital_platform. Start Docker Desktop and run docker compose up -d --wait before integration or functional tests. HOSPITAL_TEST_CONNECTION_STRING overrides the API's development connection secret; server credentials must allow creating and dropping databases. Signing keys are generated per test host, so CI does not need a signing secret. Unit tests do not require Docker or database credentials.
 
-Authentication tests cover credential rejection, JWT signing/issuer/audience/expiry and session ownership, refresh hashes and absolute expiry, rotation, consumed-token reuse, concurrent refresh, unknown tokens, independent logins, logout, authentication in non-active account states without active-operation permissions, expired sessions, and current permissions overriding stale JWT claims. Features/Patients/PatientProfileTests.cs covers own-patient reads in every account state and role restrictions. Features/Users/UserProfileTests.cs covers own-account reads across all four roles and their account states, isolation between accounts, absent/invalid tokens, and revocation after logout. GitHub Actions runs these committed feature suites after push.
+Fact marks one case; Theory plus InlineData runs multiple cases. Namespace-based class filters select Unit, Integration, Functional, or a feature without changing the test runner. Only the existing xUnit1051 cancellation-token recommendation is suppressed. GitHub Actions builds the solution and runs all test types after push.
 
-To build and run tests locally from the repository root:
+To run everything from the repository root:
 
 ```powershell
 docker compose up -d --wait

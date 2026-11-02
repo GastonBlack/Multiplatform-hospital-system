@@ -6,14 +6,15 @@ using HospitalPlatform.Api.Features.Authentication.DTOs;
 using HospitalPlatform.Api.Features.Doctors.Models;
 using HospitalPlatform.Api.Features.Patients.Models;
 using HospitalPlatform.Api.Features.Staff.Models;
+using StaffMember = HospitalPlatform.Api.Features.Staff.Models.Staff;
 using HospitalPlatform.Api.Features.Users.Models;
 using HospitalPlatform.Api.Infrastructure.Persistence;
-using HospitalPlatform.Api.IntegrationTests.Infrastructure;
+using HospitalPlatform.Api.Tests.Shared.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace HospitalPlatform.Api.IntegrationTests.Features.Users;
+namespace HospitalPlatform.Api.Tests.Integration.Features.Users;
 
 public class UserProfileTests : IAsyncLifetime
 {
@@ -118,7 +119,7 @@ public class UserProfileTests : IAsyncLifetime
             if (user.ProfileType == ProfileType.Doctor)
                 db.Doctors.Add(new Doctor { UserId = user.Id, EmployeeNumber = employeeNumber, MedicalLicenseNumber = "LICENSE-" + number });
             else
-                db.Staff.Add(new Staff { UserId = user.Id, EmployeeNumber = employeeNumber, StaffRole = Enum.Parse<StaffRole>(role) });
+                db.Staff.Add(new StaffMember { UserId = user.Id, EmployeeNumber = employeeNumber, StaffRole = Enum.Parse<StaffRole>(role) });
         }
         await db.SaveChangesAsync();
         return user;

@@ -5,15 +5,16 @@ using System.Text.Json;
 using HospitalPlatform.Api.Features.Authentication.DTOs;
 using HospitalPlatform.Api.Features.Patients.DTOs;
 using HospitalPlatform.Api.Features.Staff.Models;
+using StaffMember = HospitalPlatform.Api.Features.Staff.Models.Staff;
 using HospitalPlatform.Api.Features.Users.Models;
 using HospitalPlatform.Api.Infrastructure.Persistence;
-using HospitalPlatform.Api.IntegrationTests.Infrastructure;
+using HospitalPlatform.Api.Tests.Shared.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace HospitalPlatform.Api.IntegrationTests.Features.Patients;
+namespace HospitalPlatform.Api.Tests.Integration.Features.Patients;
 
 public class PatientProfileTests : IAsyncLifetime
 {
@@ -127,7 +128,7 @@ public class PatientProfileTests : IAsyncLifetime
         user.PasswordHash = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>().HashPassword(user, "Ab1!_?xy");
         db.Users.Add(user);
         db.EmployeeNumbers.Add(new EmployeeNumberRegistration { UserId = user.Id, EmployeeNumber = "EMP-000001" });
-        db.Staff.Add(new Staff { UserId = user.Id, EmployeeNumber = "EMP-000001", StaffRole = role });
+        db.Staff.Add(new StaffMember { UserId = user.Id, EmployeeNumber = "EMP-000001", StaffRole = role });
         await db.SaveChangesAsync();
         return user;
     }

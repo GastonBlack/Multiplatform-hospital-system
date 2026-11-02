@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace HospitalPlatform.Api.IntegrationTests.Infrastructure;
+namespace HospitalPlatform.Api.Tests.Shared.Infrastructure;
 
 // These endpoints are loaded only by the test host to exercise authorization policies.
 [ApiController]
