@@ -8,7 +8,7 @@ HospitalDbContext exposes Users and Patients and loads their IEntityTypeConfigur
 
 HospitalDbContext also exposes Doctors, Staff, and EmployeeNumbers. Doctor and Staff use fixed profile discriminators and unique UserId values. EmployeeNumbers has EmployeeNumber as its primary key, a unique UserId, and an alternate composite key (EmployeeNumber, UserId). Employee profile foreign keys reference that pair so a profile cannot use another account's employee number. Medical licenses are unique, StaffRole is constrained text, and these relationships use restrictive deletion.
 
-The InitialAccounts migration creates these five tables, their constraints, and EmployeeNumberSequence (bigint, starting at 1, incrementing by 1, without cycling). The initial administrator seed now allocates and formats employee numbers through this sequence; general employee registration remains pending.
+The InitialAccounts migration creates these five tables, their constraints, and EmployeeNumberSequence (bigint, starting at 1, incrementing by 1, without cycling). Doctor registration, Staff registration, and the initial administrator seed allocate and format employee numbers through this shared sequence.
 
 Deferred constraint triggers require a matching profile when a transaction commits. Immediate keys prevent multiple or mismatched profiles. Profile mutations lock the affected User rows in UUID order before changing the profile; deferred checks read the final state under READ COMMITTED. Account/profile creation must use one transaction, including the employee registry for Doctor and Staff. Validation can fail at commit even after SaveChanges succeeds. TRUNCATE is rejected on all five tables. Production application credentials must not own the schema or have privileges to disable triggers.
 
@@ -18,7 +18,7 @@ Public patient registration is implemented in PatientRegistrationService, behind
 
 ExceptionHandlingMiddleware is registered before the remaining HTTP middleware. Custom AppException types carry the expected status and error code; ValidationException maps to 400 and DbUpdateConcurrencyException maps to 409. Unknown errors, including other DbUpdateException, InvalidOperationException, and ArgumentException failures, map to 500. ErrorResponse uses camelCase JSON and includes error, message, statusCode, traceId, and a UTC timestamp. Unexpected exception messages are exposed only in Development; Production returns a generic message. Errors are logged, and an already-started response is not overwritten.
 
-PatientsController exposes public POST /api/patients/register and calls IPatientRegistrationService. Successful registration returns 201 with UserId, PatientId, and AccountStatus, without passwords, hashes, or tokens. AccountStatus currently uses the default numeric enum serialization (1 means PendingVerification). ApiController validates request DTOs and returns automatic 400 ValidationProblemDetails responses for invalid input or malformed JSON before invoking the service. Known duplicates become 409 ErrorResponse responses through the exception middleware. These are different error-body shapes; clients should use the HTTP status and the corresponding response fields. Receptionist-created patient and doctor registration workflows remain subsequent implementation steps. Registration does not automatically log the patient in. Do not use EnsureCreated. Check-digit arithmetic remains out of scope.
+PatientsController exposes public POST /api/patients/register and calls IPatientRegistrationService. Successful registration returns 201 with UserId, PatientId, and AccountStatus, without passwords, hashes, or tokens. AccountStatus currently uses the default numeric enum serialization (1 means PendingVerification). ApiController validates request DTOs and returns automatic 400 ValidationProblemDetails responses for invalid input or malformed JSON before invoking the service. Known duplicates become 409 ErrorResponse responses through the exception middleware. These are different error-body shapes; clients should use the HTTP status and the corresponding response fields. Receptionist-created patient registration remains a subsequent implementation step. Registration does not automatically log the patient in. Do not use EnsureCreated. Check-digit arithmetic remains out of scope.
 
 Example request body:
 
@@ -159,7 +159,31 @@ The service creates an Active User with ProfileType Staff, hashes the password w
 
 The 201 response contains userId, staffId, employeeNumber, staffRole, and accountStatus. Role and account status are text; passwords, hashes, and tokens are omitted. The new employee can then use POST /api/auth/login and GET /api/users/me. No schema migration is required.
 
-Integration/Features/Staff/StaffRegistrationTests.cs verifies persisted creation for both roles, permissions and current authorization changes, validation, server-owned values, duplicate-email rollback without recycling the number, concurrent duplicate emails, and concurrent staff/doctor number allocation beyond six digits. Functional/Features/Staff/StaffRegistrationFlowTests.cs verifies registration, employee login, own-profile reads, assigned permissions, and logout through production HTTP endpoints. Doctor allocation uses a test fixture because its registration endpoint is not implemented yet. These tests use only the isolated databases created by HospitalApiFactory.
+Integration/Features/Staff/StaffRegistrationTests.cs verifies persisted creation for both roles, permissions and current authorization changes, validation, server-owned values, duplicate-email rollback without recycling the number, concurrent duplicate emails, and concurrent staff/doctor number allocation beyond six digits. Functional/Features/Staff/StaffRegistrationFlowTests.cs verifies registration, employee login, own-profile reads, assigned permissions, and logout through production HTTP endpoints. The shared-number test uses a doctor fixture to isolate sequence allocation. These tests use only the isolated databases created by HospitalApiFactory.
+
+## Doctor Registration
+
+POST /api/doctors/register creates doctor accounts through DoctorsController and IDoctorRegistrationService. It requires a valid JWT, the current Administrator role, and an Active account. The controller combines the default active-account policy with the administrator role restriction. Anonymous or invalid-token requests return 401; other roles and non-active administrators receive 403.
+
+Log in as an active administrator, paste the accessToken into Swagger's Authorize dialog, and submit:
+
+```json
+{
+  "firstName": "Maria",
+  "lastName": "Gomez",
+  "email": "medico@example.com",
+  "password": "Ab1!_?xy",
+  "medicalLicenseNumber": "00012345"
+}
+```
+
+Names require 2-120 characters, email at most 150 characters and the shared normalization policy, and password 6-12 characters without trimming. MedicalLicenseNumber is required text: exterior whitespace is trimmed, while letter case and leading zeros are preserved. No numeric-only format or license checksum is imposed. Invalid or missing data returns 400. Duplicate email across any account profile or duplicate medical license returns 409. Suspended and Deactivated doctors retain ownership of their licenses.
+
+The service hashes the password and creates an Active User with ProfileType Doctor, an EmployeeNumbers registration through the shared EmployeeNumberService, and a Doctor profile in one transaction. Failed registrations leave no partial account, number registration, or profile; an allocated sequence value may leave a gap. Identifiers, employee numbers, profile type, and account state are server-owned. The existing model and indexes already support this operation, so no migration is needed.
+
+The 201 response contains userId, doctorId, employeeNumber, medicalLicenseNumber, and accountStatus as text. It does not return passwords, hashes, or tokens. The doctor can log in through POST /api/auth/login and read basic account data through GET /api/users/me. Registration does not assign specialties or availability.
+
+Integration/Features/Doctors/DoctorRegistrationTests.cs verifies persisted ownership and password hashes, authorization, validation, duplicate-email/license rollback, reserved licenses on inactive accounts, server-owned fields, concurrent duplicate requests, and simultaneous Doctor/Staff registration using the same sequence beyond six digits. Functional/Features/Doctors/DoctorRegistrationFlowTests.cs exercises administrator login, doctor registration, doctor login, own-account reads, denied administrator operations, and logout through HTTP endpoints.
 
 ## Authentication
 
@@ -207,7 +231,7 @@ The CI job starts a PostgreSQL 18.6 service container, restores dependencies, bu
 
 All suites live in tests/HospitalPlatform.Api.Tests, organized first by type and then by feature. See [tests/README.md](../tests/README.md) for the directory tree, classification rules, and commands to run one type or feature.
 
-Unit/Features contains isolated tests without an HTTP host or database; Users/EmailNormalizerTests.cs verifies the email normalization policy. Integration/Features contains Authentication, Patients, Staff, and Users tests that exercise the real API and persisted state. Integration/Infrastructure covers database seeding and OpenAPI configuration. Functional/Features contains complete HTTP workflows; Staff/StaffRegistrationFlowTests.cs covers creating employees, login, own-profile reads, permissions, and logout, without querying persistence inside the scenario.
+Unit/Features contains isolated tests without an HTTP host or database; Users/EmailNormalizerTests.cs verifies the email normalization policy. Integration/Features contains Authentication, Doctors, Patients, Staff, and Users tests that exercise the real API and persisted state. Integration/Infrastructure covers database seeding and OpenAPI configuration. Functional/Features contains complete Doctor and Staff registration, login, own-account reads, permission, and logout workflows, without querying persistence inside the scenario.
 
 Shared/Infrastructure/HospitalApiFactory.cs owns the reusable host, isolated signing key, and database lifecycle. AuthorizationProbeController is loaded only by the test host for integration authorization checks. WebApplicationFactory starts the real Program entry point in Testing with the generated database; the public partial Program declaration exposes that entry point. The HTTPS client address avoids testing redirects instead of endpoint behavior. xUnit (xunit.v3) runs through Microsoft.Testing.Platform, selected in global.json.
 

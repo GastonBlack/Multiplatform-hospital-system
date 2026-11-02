@@ -10,6 +10,7 @@ HospitalPlatform.Api.Tests/
   Integration/
     Features/
       Authentication/AuthenticationTests.cs
+      Doctors/DoctorRegistrationTests.cs
       Patients/PatientRegistrationTests.cs
       Patients/PatientProfileTests.cs
       Staff/StaffRegistrationTests.cs
@@ -19,6 +20,7 @@ HospitalPlatform.Api.Tests/
       OpenApiTests.cs
   Functional/
     Features/
+      Doctors/DoctorRegistrationFlowTests.cs
       Staff/StaffRegistrationFlowTests.cs
   Shared/
     Infrastructure/
@@ -28,7 +30,7 @@ HospitalPlatform.Api.Tests/
 
 - **Unit:** isolated logic, with no HTTP host or database. Email normalization tests cover canonical addresses, rejected input, preserved dots/plus suffixes, and culture-independent casing.
 - **Integration:** API, authentication, EF Core, and PostgreSQL working together, including persisted state, constraints, rollback, and concurrency. OpenAPI tests check host configuration without opening a database connection.
-- **Functional:** complete user workflows through production HTTP endpoints. The staff workflow covers administrator login, employee registration, employee login, own-profile reads, assigned permissions, and logout. Database access is limited to test setup and cleanup.
+- **Functional:** complete user workflows through production HTTP endpoints. Doctor and staff workflows cover administrator login, employee registration, employee login, own-account reads, assigned permissions, and logout. Database access is limited to test setup and cleanup.
 - **Shared:** reusable test infrastructure, without test cases. The authorization probe is registered only in the test host and is used by integration tests.
 
 Use matching namespaces such as `HospitalPlatform.Api.Tests.Unit.Features.Users`. Add feature tests under the appropriate type; keep cross-cutting infrastructure tests in `Integration/Infrastructure`. A test that starts the API or connects to PostgreSQL is not a unit test. Functional tests run against the in-process API and do not automate a browser or mobile client.

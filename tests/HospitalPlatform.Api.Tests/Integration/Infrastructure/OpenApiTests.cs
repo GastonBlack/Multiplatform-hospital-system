@@ -49,7 +49,8 @@ public class OpenApiTests
         foreach (var (path, method) in new[]
         {
             ("/api/auth/session", "get"), ("/api/auth/logout", "post"),
-            ("/api/users/me", "get"), ("/api/patients/me", "get"), ("/api/staff/register", "post")
+            ("/api/users/me", "get"), ("/api/patients/me", "get"), ("/api/staff/register", "post"),
+            ("/api/doctors/register", "post")
         })
         {
             var security = paths.GetProperty(path).GetProperty(method).GetProperty("security");
@@ -61,6 +62,7 @@ public class OpenApiTests
             Assert.False(operation.TryGetProperty("security", out var security) && security.GetArrayLength() > 0);
         }
         Assert.True(paths.GetProperty("/api/staff/register").GetProperty("post").GetProperty("responses").TryGetProperty("201", out _));
+        Assert.True(paths.GetProperty("/api/doctors/register").GetProperty("post").GetProperty("responses").TryGetProperty("201", out _));
         Assert.False(json.RootElement.TryGetProperty("security", out var globalSecurity) && globalSecurity.GetArrayLength() > 0);
     }
 

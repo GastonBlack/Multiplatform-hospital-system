@@ -1,6 +1,7 @@
 using System.Text;
 using HospitalPlatform.Api.Features.Authentication.Services;
 using HospitalPlatform.Api.Features.Authentication.Settings;
+using HospitalPlatform.Api.Features.Doctors.Services;
 using HospitalPlatform.Api.Features.Patients.Services;
 using HospitalPlatform.Api.Features.Staff.Services;
 using HospitalPlatform.Api.Features.Users.Models;
@@ -33,6 +34,7 @@ builder.Services.AddDbContext<HospitalDbContext>(options =>
 // Feature Services
 // //////////////////////////////////////////
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IDoctorRegistrationService, DoctorRegistrationService>();
 builder.Services.AddScoped<IPatientRegistrationService, PatientRegistrationService>();
 builder.Services.AddScoped<IStaffRegistrationService, StaffRegistrationService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
