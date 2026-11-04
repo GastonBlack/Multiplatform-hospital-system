@@ -85,7 +85,7 @@ Revocation applies to subsequent checks. A write already executing still needs i
 
 ## 6. Backend Implementation
 
-- POST /api/auth/login validates credentials and creates a session plus its first refresh-token hash atomically.
+- POST /api/auth/login accepts nationalIdentificationNumber (exactly eight ASCII digits as text) and password for all profiles, using the unique identifier on User instead of email. It validates credentials and creates a session plus its first refresh-token hash atomically.
 - POST /api/auth/refresh consumes the old token and inserts its replacement under User-before-session locks. Reuse commits session revocation before returning 401.
 - POST /api/auth/logout requires a bearer token and revokes only its current session, returning 204.
 - GET /api/auth/session returns the caller's UserId, SessionId, ProfileType, and current AccountStatus. Every account state may access it and log out.

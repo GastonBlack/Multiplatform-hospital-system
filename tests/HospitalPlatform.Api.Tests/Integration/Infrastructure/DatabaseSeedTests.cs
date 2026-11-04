@@ -35,6 +35,7 @@ public class DatabaseSeedTests : IAsyncLifetime
         Assert.Equal("Default", user.FirstName);
         Assert.Equal("Administrator", user.LastName);
         Assert.Equal("administrator0101@gmail.com", user.Email);
+        Assert.Equal("90000001", user.NationalIdentificationNumber);
         Assert.Equal(ProfileType.Staff, user.ProfileType);
         Assert.Equal(AccountStatus.Active, user.AccountStatus);
         Assert.Equal(user.Id, staff.UserId);
@@ -51,7 +52,7 @@ public class DatabaseSeedTests : IAsyncLifetime
         Assert.NotEqual(password, user.PasswordHash);
 
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
-        using var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = user.Email, Password = password });
+        using var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { NationalIdentificationNumber = user.NationalIdentificationNumber!, Password = password });
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         var tokens = await login.Content.ReadFromJsonAsync<AuthenticationResponse>();
         Assert.NotNull(tokens);
@@ -118,11 +119,28 @@ public class DatabaseSeedTests : IAsyncLifetime
         Assert.Equal(0, await db.EmployeeNumbers.CountAsync());
     }
 
+    [Fact]
+    public async Task Seed_WithInvalidIdentification_DoesNotCreateAccounts()
+    {
+        foreach (var identification in new[] { "", "1234567", "123456789", "0.123.456-7", " 12345678" })
+        {
+            using var scope = factory.Services.CreateScope();
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => DatabaseSeed.SeedAsync(
+                scope.ServiceProvider.GetRequiredService<HospitalDbContext>(),
+                scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), "Initial1!", identification));
+        }
+        using var verification = factory.Services.CreateScope();
+        var db = verification.ServiceProvider.GetRequiredService<HospitalDbContext>();
+        Assert.Equal(0, await db.Users.CountAsync());
+        Assert.Equal(0, await db.Staff.CountAsync());
+        Assert.Equal(0, await db.EmployeeNumbers.CountAsync());
+    }
+
     private async Task SeedAsync(string password)
     {
         using var scope = factory.Services.CreateScope();
         await DatabaseSeed.SeedAsync(
             scope.ServiceProvider.GetRequiredService<HospitalDbContext>(),
-            scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), password);
+            scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), password, "90000001");
     }
 }

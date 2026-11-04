@@ -9,7 +9,6 @@ public class Patient
     public required Guid UserId { get; set; }
     public ProfileType ProfileType { get; private set; } = ProfileType.Patient;
 
-    public required string NationalIdentificationNumber { get; set; }
     public required string PhoneNumber { get; set; }
     public required DateOnly DateOfBirth { get; set; }
 

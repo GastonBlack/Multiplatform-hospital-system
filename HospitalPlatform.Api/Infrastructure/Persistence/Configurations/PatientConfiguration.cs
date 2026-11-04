@@ -12,8 +12,6 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.ToTable("Patients", table =>
         {
             table.HasCheckConstraint("CK_Patients_ProfileType", "\"ProfileType\" = 'Patient'");
-            table.HasCheckConstraint("CK_Patients_NationalIdentificationNumber",
-                "\"NationalIdentificationNumber\" ~ '^[0-9]{8}$'");
             table.HasCheckConstraint("CK_Patients_IdentityVerification",
                 "(\"IdentityVerifiedAt\" IS NULL AND \"IdentityVerifiedByUserId\" IS NULL) OR " +
                 "(\"IdentityVerifiedAt\" IS NOT NULL AND \"IdentityVerifiedByUserId\" IS NOT NULL)");
@@ -22,7 +20,6 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.HasKey(patient => patient.Id);
         builder.Property(patient => patient.Id).ValueGeneratedNever();
         builder.HasIndex(patient => patient.UserId).IsUnique();
-        builder.HasIndex(patient => patient.NationalIdentificationNumber).IsUnique();
 
         builder.Property(patient => patient.ProfileType)
             .HasConversion<string>()

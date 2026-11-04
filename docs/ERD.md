@@ -33,6 +33,7 @@ erDiagram
         text FirstName
         text LastName
         text Email UK
+        varchar NationalIdentificationNumber UK "8 digits; nullable only for legacy employee accounts"
         text PasswordHash
         text ProfileType "Patient, Doctor, or Staff"
         text AccountStatus
@@ -44,7 +45,6 @@ erDiagram
         uuid Id PK
         uuid UserId FK, UK
         text ProfileType FK "Fixed Patient; composite FK with UserId"
-        text NationalIdentificationNumber UK
         text PhoneNumber
         date DateOfBirth
         timestamptz IdentityVerifiedAt "Nullable"
@@ -137,7 +137,7 @@ All attributes are required unless marked Nullable. Application workflows remain
 
 User contains authentication data, shared personal information, and AccountStatus.
 
-User.Email stores the canonical address directly, without an additional normalized-email column: trim exterior whitespace and convert to lowercase independently of server culture. Reject internal whitespace and validate the address before persistence; preserve dots and plus suffixes without provider-specific rewriting. All account creation, permitted email changes, and email-based login lookups use the same NormalizeEmail operation. The unconditional UNIQUE (Email) constraint protects concurrent writes of canonical values across all profile types.
+User.Email stores the canonical address directly, without an additional normalized-email column: trim exterior whitespace and convert to lowercase independently of server culture. Reject internal whitespace and validate the address before persistence; preserve dots and plus suffixes without provider-specific rewriting. All account creation and permitted email changes use the same NormalizeEmail operation. Login uses NationalIdentificationNumber instead of email. The unconditional UNIQUE (Email) constraint protects concurrent writes of canonical values across all profile types.
 
 Patient, Doctor, and Staff each have their own Id and a required, unique UserId referencing User.Id.
 
@@ -162,9 +162,9 @@ See [ADR-0008](adr/0008-single-user-profile.md). This is the selected enforcemen
 
 ### 4.2 Patient Identity Verification
 
-Patient.NationalIdentificationNumber stores only Uruguayan cédulas de identidad in Version 1, including the supplied check digit. Accept digits only; reject whitespace, dots, hyphens, and other non-digit characters without removing or repairing them. Persist the accepted input unchanged as text without losing leading zeros or the final check digit; 12343241 is accepted and 1 234 324 1 is rejected. All registration paths and permitted identity-number changes/lookups use this same policy. UNIQUE (NationalIdentificationNumber) protects values against duplicate and concurrent registration.
+User.NationalIdentificationNumber stores only Uruguayan cédulas de identidad in Version 1, including the supplied check digit. Accept digits only; reject whitespace, dots, hyphens, and other non-digit characters without removing or repairing them. Persist the accepted input unchanged as text without losing leading zeros or the final check digit; 12343241 is accepted and 1 234 324 1 is rejected. All registration paths and permitted identity-number changes/lookups use this same policy. UNIQUE (NationalIdentificationNumber) protects values against duplicate and concurrent registration.
 
-Require exactly eight ASCII digits (0–9) as entered, including the supplied check digit. Reject other lengths with guidance to enter the complete cédula, including any leading zero and the check digit; never pad, infer missing digits, or truncate the input. Persist the value with NOT NULL and CHECK (NationalIdentificationNumber ~ '^[0-9]{8}$'), alongside its unconditional UNIQUE constraint.
+Require exactly eight ASCII digits (0–9) as entered, including the supplied check digit. Reject other lengths with guidance to enter the complete cédula, including any leading zero and the check digit; never pad, infer missing digits, or truncate the input. Require the value on every new account registration. Store it on User with a UNIQUE constraint and CHECK (NationalIdentificationNumber IS NULL OR NationalIdentificationNumber ~ '^[0-9]{8}$'). NULL is retained only to preserve legacy employee accounts whose actual identification has not been supplied; those accounts cannot initiate a new login until it is set.
 
 Version 1 preserves the supplied check digit without calculating or validating its checksum; no checksum constraint is required. Normalization and retention of the check digit do not establish identity verification, which remains an in-person receptionist workflow.
 
@@ -254,7 +254,7 @@ Version 1 does not introduce replacement appointment rows or a rescheduling-hist
 | Patient, Doctor, Staff | Required unique UserId and required ProfileType fixed to the table's type |
 | Patient, Doctor, Staff | Immediate composite (UserId, ProfileType) foreign key to User |
 | User, Patient, Doctor, Staff | Initially deferred constraint triggers requiring exactly one matching profile for each affected, still-existing User |
-| Patient | Required unique NationalIdentificationNumber; CHECK requiring exactly eight ASCII digits, including the supplied check digit |
+| User | Unique NationalIdentificationNumber for login across all profiles; eight ASCII digits, including the supplied check digit; legacy employee NULL values await real identification |
 | Patient | Verification fields both absent or both populated |
 | Patient | Nullable IdentityVerifiedByUserId referencing User.Id |
 | EmployeeNumbers | EmployeeNumber primary key; required unique UserId referencing User.Id |

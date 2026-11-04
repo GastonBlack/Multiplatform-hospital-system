@@ -148,10 +148,6 @@ namespace HospitalPlatform.Api.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("IdentityVerifiedByUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("NationalIdentificationNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasColumnType("text");
@@ -169,9 +165,6 @@ namespace HospitalPlatform.Api.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("IdentityVerifiedByUserId");
 
-                    b.HasIndex("NationalIdentificationNumber")
-                        .IsUnique();
-
                     b.HasIndex("UserId")
                         .IsUnique();
 
@@ -181,8 +174,6 @@ namespace HospitalPlatform.Api.Infrastructure.Persistence.Migrations
                     b.ToTable("Patients", null, t =>
                         {
                             t.HasCheckConstraint("CK_Patients_IdentityVerification", "(\"IdentityVerifiedAt\" IS NULL AND \"IdentityVerifiedByUserId\" IS NULL) OR (\"IdentityVerifiedAt\" IS NOT NULL AND \"IdentityVerifiedByUserId\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("CK_Patients_NationalIdentificationNumber", "\"NationalIdentificationNumber\" ~ '^[0-9]{8}$'");
 
                             t.HasCheckConstraint("CK_Patients_ProfileType", "\"ProfileType\" = 'Patient'");
                         });
@@ -272,6 +263,10 @@ namespace HospitalPlatform.Api.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("NationalIdentificationNumber")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
@@ -288,9 +283,14 @@ namespace HospitalPlatform.Api.Infrastructure.Persistence.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("NationalIdentificationNumber")
+                        .IsUnique();
+
                     b.ToTable("Users", null, t =>
                         {
                             t.HasCheckConstraint("CK_Users_AccountStatus", "\"AccountStatus\" IN ('PendingVerification', 'Active', 'Suspended', 'Deactivated')");
+
+                            t.HasCheckConstraint("CK_Users_NationalIdentificationNumber", "\"NationalIdentificationNumber\" IS NULL OR \"NationalIdentificationNumber\" ~ '^[0-9]{8}$'");
 
                             t.HasCheckConstraint("CK_Users_ProfileType", "\"ProfileType\" IN ('Patient', 'Doctor', 'Staff')");
                         });

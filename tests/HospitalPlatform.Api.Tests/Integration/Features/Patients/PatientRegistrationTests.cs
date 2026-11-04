@@ -92,7 +92,7 @@ public class PatientRegistrationTests : IAsyncLifetime
         Assert.Equal("ana+turnos@example.com", user.Email);
         Assert.Equal(ProfileType.Patient, user.ProfileType);
         Assert.Equal(AccountStatus.PendingVerification, user.AccountStatus);
-        Assert.Equal("01234567", patient.NationalIdentificationNumber);
+        Assert.Equal("01234567", user.NationalIdentificationNumber);
         Assert.Null(patient.IdentityVerifiedAt);
         Assert.Null(patient.IdentityVerifiedByUserId);
         Assert.Equal(TimeSpan.Zero, user.CreatedAt.Offset);

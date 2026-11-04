@@ -56,7 +56,7 @@ public class UserProfileTests : IAsyncLifetime
                 continue;
             number++;
             var user = await CreateUserAsync(role, status, number);
-            using var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = user.Email, Password = "Ab1!_?xy" });
+            using var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { NationalIdentificationNumber = user.NationalIdentificationNumber!, Password = "Ab1!_?xy" });
             Assert.Equal(HttpStatusCode.OK, login.StatusCode);
             var tokens = await login.Content.ReadFromJsonAsync<AuthenticationResponse>();
             Assert.NotNull(tokens);
@@ -98,7 +98,7 @@ public class UserProfileTests : IAsyncLifetime
         var now = DateTimeOffset.UtcNow;
         var user = new User
         {
-            FirstName = "User" + number, LastName = "Test", Email = $"user{number}@example.com", PasswordHash = string.Empty,
+            FirstName = "User" + number, LastName = "Test", Email = $"user{number}@example.com", NationalIdentificationNumber = number.ToString("D8"), PasswordHash = string.Empty,
             ProfileType = role == "Patient" ? ProfileType.Patient : role == "Doctor" ? ProfileType.Doctor : ProfileType.Staff,
             AccountStatus = status, CreatedAt = now, UpdatedAt = now
         };
@@ -108,7 +108,7 @@ public class UserProfileTests : IAsyncLifetime
         {
             db.Patients.Add(new Patient
             {
-                UserId = user.Id, NationalIdentificationNumber = number.ToString("D8"),
+                UserId = user.Id,
                 PhoneNumber = "+598 99 123 456", DateOfBirth = new DateOnly(2000, 1, 1)
             });
         }

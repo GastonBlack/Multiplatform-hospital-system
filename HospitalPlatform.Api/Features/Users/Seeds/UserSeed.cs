@@ -6,7 +6,7 @@ namespace HospitalPlatform.Api.Features.Users.Seeds;
 
 public static class UserSeed
 {
-    public static User ConfigureUser(HospitalDbContext db, IPasswordHasher<User> passwordHasher, string password)
+    public static User ConfigureUser(HospitalDbContext db, IPasswordHasher<User> passwordHasher, string password, string nationalIdentificationNumber)
     {
         var now = DateTimeOffset.UtcNow;
         var user = new User
@@ -14,6 +14,7 @@ public static class UserSeed
             FirstName = "Default",
             LastName = "Administrator",
             Email = "administrator0101@gmail.com",
+            NationalIdentificationNumber = nationalIdentificationNumber,
             PasswordHash = string.Empty,
             ProfileType = ProfileType.Staff,
             AccountStatus = AccountStatus.Active,

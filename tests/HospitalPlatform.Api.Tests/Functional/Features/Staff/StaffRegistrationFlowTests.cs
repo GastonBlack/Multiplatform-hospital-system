@@ -27,7 +27,7 @@ public class StaffRegistrationFlowTests : IAsyncLifetime
         client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
         using var scope = factory.Services.CreateScope();
         await DatabaseSeed.SeedAsync(scope.ServiceProvider.GetRequiredService<HospitalDbContext>(),
-            scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), Password);
+            scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), Password, "90000001");
     }
 
     public async ValueTask DisposeAsync()
@@ -41,11 +41,11 @@ public class StaffRegistrationFlowTests : IAsyncLifetime
     [InlineData(StaffRole.Administrator)]
     public async Task AdministratorRegistersStaff_EmployeeCanLogInReadOwnProfileAndUseAssignedRole(StaffRole role)
     {
-        var administratorTokens = await LoginAsync("administrator0101@gmail.com");
+        var administratorTokens = await LoginAsync("90000001");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", administratorTokens.AccessToken);
         var request = new RegisterStaffRequest
         {
-            FirstName = "Ana", LastName = "Perez", Email = "ana.staff@example.com", Password = Password, StaffRole = role
+            FirstName = "Ana", LastName = "Perez", Email = "ana.staff@example.com", NationalIdentificationNumber = "12345678", Password = Password, StaffRole = role
         };
         using var registration = await client.PostAsJsonAsync("/api/staff/register", request);
         Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
@@ -54,7 +54,7 @@ public class StaffRegistrationFlowTests : IAsyncLifetime
         Assert.Equal("Active", employee.AccountStatus);
         Assert.Equal(role.ToString(), employee.StaffRole);
 
-        var employeeTokens = await LoginAsync(request.Email);
+        var employeeTokens = await LoginAsync(request.NationalIdentificationNumber);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", employeeTokens.AccessToken);
         using var ownProfile = await client.GetAsync("/api/users/me");
         Assert.Equal(HttpStatusCode.OK, ownProfile.StatusCode);
@@ -66,6 +66,7 @@ public class StaffRegistrationFlowTests : IAsyncLifetime
         Assert.Equal("Active", profile.RootElement.GetProperty("accountStatus").GetString());
 
         request.Email = "another.staff@example.com";
+        request.NationalIdentificationNumber = "23456789";
         request.StaffRole = StaffRole.Receptionist;
         using var staffOperation = await client.PostAsJsonAsync("/api/staff/register", request);
         Assert.Equal(role == StaffRole.Administrator ? HttpStatusCode.Created : HttpStatusCode.Forbidden, staffOperation.StatusCode);
@@ -76,9 +77,9 @@ public class StaffRegistrationFlowTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, afterLogout.StatusCode);
     }
 
-    private async Task<AuthenticationResponse> LoginAsync(string email)
+    private async Task<AuthenticationResponse> LoginAsync(string nationalIdentificationNumber)
     {
-        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = Password });
+        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { NationalIdentificationNumber = nationalIdentificationNumber, Password = Password });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var tokens = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
         Assert.NotNull(tokens);

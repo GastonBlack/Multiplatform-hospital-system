@@ -26,7 +26,7 @@ public class DoctorRegistrationFlowTests : IAsyncLifetime
         client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
         using var scope = factory.Services.CreateScope();
         await DatabaseSeed.SeedAsync(scope.ServiceProvider.GetRequiredService<HospitalDbContext>(),
-            scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), Password);
+            scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), Password, "90000001");
     }
 
     public async ValueTask DisposeAsync()
@@ -38,10 +38,10 @@ public class DoctorRegistrationFlowTests : IAsyncLifetime
     [Fact]
     public async Task AdministratorRegistersDoctor_DoctorCanLogInReadOwnAccountAndLogOut()
     {
-        await AuthorizeAsync("administrator0101@gmail.com");
+        await AuthorizeAsync("90000001");
         var request = new RegisterDoctorRequest
         {
-            FirstName = "Maria", LastName = "Gomez", Email = "medico@example.com", Password = Password, MedicalLicenseNumber = "00012345"
+            FirstName = "Maria", LastName = "Gomez", Email = "medico@example.com", NationalIdentificationNumber = "12345678", Password = Password, MedicalLicenseNumber = "00012345"
         };
         using var registration = await client.PostAsJsonAsync("/api/doctors/register", request);
         Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
@@ -51,7 +51,7 @@ public class DoctorRegistrationFlowTests : IAsyncLifetime
         Assert.Equal(request.MedicalLicenseNumber, doctor.MedicalLicenseNumber);
         Assert.StartsWith("EMP-", doctor.EmployeeNumber);
 
-        await AuthorizeAsync(request.Email);
+        await AuthorizeAsync(request.NationalIdentificationNumber);
         using var ownProfile = await client.GetAsync("/api/users/me");
         Assert.Equal(HttpStatusCode.OK, ownProfile.StatusCode);
         using var profile = JsonDocument.Parse(await ownProfile.Content.ReadAsStringAsync());
@@ -62,6 +62,7 @@ public class DoctorRegistrationFlowTests : IAsyncLifetime
         Assert.Equal("Active", profile.RootElement.GetProperty("accountStatus").GetString());
 
         request.Email = "another@example.com";
+        request.NationalIdentificationNumber = "23456789";
         request.MedicalLicenseNumber = "OTHER-001";
         using var denied = await client.PostAsJsonAsync("/api/doctors/register", request);
         Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
@@ -71,9 +72,9 @@ public class DoctorRegistrationFlowTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, afterLogout.StatusCode);
     }
 
-    private async Task AuthorizeAsync(string email)
+    private async Task AuthorizeAsync(string nationalIdentificationNumber)
     {
-        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = Password });
+        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { NationalIdentificationNumber = nationalIdentificationNumber, Password = Password });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var tokens = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
         Assert.NotNull(tokens);

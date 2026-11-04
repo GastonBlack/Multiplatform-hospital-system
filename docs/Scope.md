@@ -58,7 +58,7 @@ Each actor authenticates through a `User` account associated with exactly one `P
 
 `User` contains shared personal information, credentials, `ProfileType`, and `AccountStatus`. ProfileType identifies Patient, Doctor, or Staff and must match the associated profile. Each profile references its account through `UserId`.
 
-All account types use a unique canonical email: trim exterior whitespace and convert to lowercase, rejecting internal whitespace and preserving dots and plus suffixes. The same email-specific normalization applies to account creation, permitted email changes, and email-based login.
+All account types use a unique canonical email: trim exterior whitespace and convert to lowercase, rejecting internal whitespace and preserving dots and plus suffixes. The same email-specific normalization applies to account creation and permitted email changes. All roles log in with their unique eight-digit NationalIdentificationNumber and password.
 
 Database constraints and deferred validation must prevent committing accounts with missing or multiple profiles. Account and profile creation occur in one transaction.
 

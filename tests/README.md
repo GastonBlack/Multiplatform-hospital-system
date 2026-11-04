@@ -7,6 +7,7 @@ HospitalPlatform.Api.Tests/
   Unit/
     Features/
       Users/EmailNormalizerTests.cs
+      Users/NationalIdentificationNumberAttributeTests.cs
   Integration/
     Features/
       Authentication/AuthenticationTests.cs
@@ -17,6 +18,7 @@ HospitalPlatform.Api.Tests/
       Users/UserProfileTests.cs
     Infrastructure/
       DatabaseSeedTests.cs
+      UserIdentificationMigrationTests.cs
       OpenApiTests.cs
   Functional/
     Features/
@@ -28,7 +30,7 @@ HospitalPlatform.Api.Tests/
       AuthorizationProbeController.cs
 ```
 
-- **Unit:** isolated logic, with no HTTP host or database. Email normalization tests cover canonical addresses, rejected input, preserved dots/plus suffixes, and culture-independent casing.
+- **Unit:** isolated logic, with no HTTP host or database. Email normalization tests cover canonical addresses, rejected input, preserved dots/plus suffixes, and culture-independent casing. Identification-format tests cover exact ASCII digits, leading zeros, and rejected formatted or Unicode input.
 - **Integration:** API, authentication, EF Core, and PostgreSQL working together, including persisted state, constraints, rollback, and concurrency. OpenAPI tests check host configuration without opening a database connection.
 - **Functional:** complete user workflows through production HTTP endpoints. Doctor and staff workflows cover administrator login, employee registration, employee login, own-account reads, assigned permissions, and logout. Database access is limited to test setup and cleanup.
 - **Shared:** reusable test infrastructure, without test cases. The authorization probe is registered only in the test host and is used by integration tests.

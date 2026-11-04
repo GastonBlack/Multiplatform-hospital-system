@@ -10,6 +10,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         builder.ToTable("Users", table =>
         {
+            table.HasCheckConstraint("CK_Users_NationalIdentificationNumber",
+                "\"NationalIdentificationNumber\" IS NULL OR \"NationalIdentificationNumber\" ~ '^[0-9]{8}$'");
             table.HasCheckConstraint("CK_Users_ProfileType",
                 "\"ProfileType\" IN ('Patient', 'Doctor', 'Staff')");
             table.HasCheckConstraint("CK_Users_AccountStatus",
@@ -20,6 +22,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.Id).ValueGeneratedNever();
         builder.HasAlternateKey(user => new { user.Id, user.ProfileType });
         builder.HasIndex(user => user.Email).IsUnique();
+        builder.HasIndex(user => user.NationalIdentificationNumber).IsUnique();
+        builder.Property(user => user.NationalIdentificationNumber).HasMaxLength(8);
 
         builder.Property(user => user.ProfileType).HasConversion<string>();
         builder.Property(user => user.AccountStatus).HasConversion<string>();

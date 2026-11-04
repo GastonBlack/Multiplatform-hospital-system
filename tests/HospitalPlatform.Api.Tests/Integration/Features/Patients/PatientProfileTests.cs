@@ -76,7 +76,7 @@ public class PatientProfileTests : IAsyncLifetime
             await db.SaveChangesAsync();
         }
 
-        await AuthenticateAsync("ana@example.com");
+        await AuthenticateAsync("01234567");
         using var response = await client.GetAsync("/api/patients/me");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var profile = await response.Content.ReadFromJsonAsync<GetPatientProfile>();
@@ -101,14 +101,14 @@ public class PatientProfileTests : IAsyncLifetime
     public async Task GetProfile_WithStaffAccount_ReturnsForbidden(StaffRole role)
     {
         var staff = await CreateStaffAsync(role);
-        await AuthenticateAsync(staff.Email);
+        await AuthenticateAsync(staff.NationalIdentificationNumber!);
         using var response = await client.GetAsync("/api/patients/me");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    private async Task AuthenticateAsync(string email)
+    private async Task AuthenticateAsync(string nationalIdentificationNumber)
     {
-        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = "Ab1!_?xy" });
+        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { NationalIdentificationNumber = nationalIdentificationNumber, Password = "Ab1!_?xy" });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var tokens = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
         Assert.NotNull(tokens);
@@ -122,7 +122,7 @@ public class PatientProfileTests : IAsyncLifetime
         var now = DateTimeOffset.UtcNow;
         var user = new User
         {
-            FirstName = "Staff", LastName = "Test", Email = "staff@example.com", PasswordHash = string.Empty,
+            FirstName = "Staff", LastName = "Test", Email = "staff@example.com", NationalIdentificationNumber = "11111111", PasswordHash = string.Empty,
             ProfileType = ProfileType.Staff, AccountStatus = AccountStatus.Active, CreatedAt = now, UpdatedAt = now
         };
         user.PasswordHash = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>().HashPassword(user, "Ab1!_?xy");

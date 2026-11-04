@@ -1,4 +1,4 @@
-﻿# Hospital Platform — Domain Model
+# Hospital Platform — Domain Model
 
 ## 1. Purpose
 
@@ -73,6 +73,7 @@ It contains information shared by all account types.
 - FirstName
 - LastName
 - Email
+- NationalIdentificationNumber
 - PasswordHash
 - ProfileType
 - AccountStatus
@@ -90,7 +91,8 @@ Each User is associated with exactly one:
 ### Invariants
 
 - Email identifies at most one User.
-- Email is stored canonically after trimming exterior whitespace and converting to lowercase independently of server culture. Reject internal whitespace; preserve dots and plus suffixes. Account creation, permitted email changes, and email-based login use the same dedicated NormalizeEmail policy.
+- NationalIdentificationNumber is the login identifier, unique across all profiles. New accounts require exactly eight ASCII digits; existing employee accounts may lack it until their actual identification is supplied.
+- Email is stored canonically after trimming exterior whitespace and converting to lowercase independently of server culture. Reject internal whitespace; preserve dots and plus suffixes. Account creation and permitted email changes use the same dedicated NormalizeEmail policy. Login uses NationalIdentificationNumber and password for every role.
 - Passwords are never stored in plaintext.
 - Each User has exactly one profile type in Version 1.
 - ProfileType is Patient, Doctor, or Staff and must match the associated profile. It is distinct from StaffRole.
@@ -183,7 +185,6 @@ Authentication and shared personal information belong to the associated User.
 
 - Id
 - UserId
-- NationalIdentificationNumber
 - PhoneNumber
 - DateOfBirth
 - IdentityVerifiedAt
@@ -197,7 +198,7 @@ Authentication and shared personal information belong to the associated User.
 
 ### Invariants
 
-- NationalIdentificationNumber identifies at most one Patient.
+- The patient uses the NationalIdentificationNumber owned by its User account; it is unique across all profiles.
 - Version 1 uses only Uruguayan cédulas de identidad, including the supplied check digit. Accept digits only and reject whitespace, dots, hyphens, and other non-digit characters without repairing the input. Store accepted values unchanged as text, preserving leading zeros and the final digit. All registration paths and permitted identity-number changes/lookups use the same strict validation policy.
 - The cédula as entered must contain exactly eight ASCII digits (0–9), including the supplied check digit. Reject other lengths with guidance to enter the complete document; do not automatically add a leading zero, infer missing digits, or truncate input.
 - IdentityVerifiedAt and IdentityVerifiedByUserId are both absent before verification.

@@ -22,7 +22,7 @@ public class RegisterPatientRequest : IValidatableObject
     public required string Password { get; set; }
 
     [Required(ErrorMessage = "Identification number is required.")]
-    [RegularExpression(@"\A[0-9]{8}\z", ErrorMessage = "Identification number must contain exactly eight digits, without spaces, dots or hyphens.")]
+    [NationalIdentificationNumber]
     public required string NationalIdentificationNumber { get; set; }
 
     [Required(ErrorMessage = "Phone number is required.")]

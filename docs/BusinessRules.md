@@ -97,7 +97,7 @@ Two user accounts shall not share the same email address.
 
 For Version 1, email comparison shall be case-insensitive. A dedicated NormalizeEmail operation shall trim leading/trailing whitespace and convert the address to lowercase independently of server culture. Reject any remaining internal whitespace; do not remove it to repair the address. Preserve dots and plus suffixes without provider-specific rewriting, and validate the email before persistence.
 
-Use the same normalization for every account creation, permitted email change, and email-based login lookup. Store the canonical value in User.Email and enforce its uniqueness in PostgreSQL. This rule applies across all profile types; generic normalization shall not alter names, passwords, or other identifiers.
+Use the same normalization for every account creation and permitted email change. Store the canonical value in User.Email and enforce its uniqueness in PostgreSQL. This rule applies across all profile types; generic normalization shall not alter names, passwords, or other identifiers.
 
 ---
 
@@ -187,7 +187,7 @@ Version 1 shall accept only Uruguayan cédulas de identidad, including the suppl
 
 Require exactly eight ASCII digits (0–9) as entered, including the check digit supplied by the person entering the document. Reject shorter or longer values and ask for the complete cédula, including any leading zero and the check digit. Do not add zeros, infer missing digits, or truncate the input.
 
-Use the same strict eight-digit validation for public self-registration, receptionist registration, and any permitted identity-number change or lookup. PostgreSQL shall enforce uniqueness and the eight-digit storage format of Patient.NationalIdentificationNumber. Version 1 shall preserve the supplied check digit without calculating or validating its checksum. Format validation shall not mark the patient's identity as verified; in-person verification remains required.
+Use the same strict eight-digit validation for public self-registration, receptionist registration, and any permitted identity-number change or lookup. PostgreSQL shall enforce uniqueness across all profiles and the eight-digit storage format of User.NationalIdentificationNumber. New patient, doctor, and staff registration all require this identifier for login. Existing employee accounts without a recorded identification number are preserved with NULL until a real identifier is supplied; no synthetic identifier is assigned. Version 1 shall preserve the supplied check digit without calculating or validating its checksum. Format validation shall not mark the patient's identity as verified; in-person verification remains required.
 
 ---
 

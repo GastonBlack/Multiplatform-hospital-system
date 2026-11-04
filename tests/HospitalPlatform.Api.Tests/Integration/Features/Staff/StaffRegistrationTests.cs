@@ -26,6 +26,7 @@ public class StaffRegistrationTests : IAsyncLifetime
 {
     private const string RegistrationUrl = "/api/staff/register";
     private const string Password = "Ab1!_?xy";
+    private int identificationSequence = 10000000;
     private readonly HospitalApiFactory factory = new();
     private HttpClient client = null!;
 
@@ -35,8 +36,8 @@ public class StaffRegistrationTests : IAsyncLifetime
         client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
         using var scope = factory.Services.CreateScope();
         await DatabaseSeed.SeedAsync(scope.ServiceProvider.GetRequiredService<HospitalDbContext>(),
-            scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), Password);
-        var tokens = await LoginAsync("administrator0101@gmail.com", Password);
+            scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), Password, "90000001");
+        var tokens = await LoginFixtureAccountAsync("administrator0101@gmail.com", Password);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
     }
 
@@ -107,7 +108,7 @@ public class StaffRegistrationTests : IAsyncLifetime
     public async Task Register_WithoutActiveAdministratorPermissions_ReturnsForbidden(string role, AccountStatus status)
     {
         var user = await CreateUserAsync(role, status);
-        var tokens = await LoginAsync(user.Email, Password);
+        var tokens = await LoginFixtureAccountAsync(user.Email, Password);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
         var before = await GetCountsAsync();
         using var response = await client.PostAsJsonAsync(RegistrationUrl, CreateRequest());
@@ -142,6 +143,8 @@ public class StaffRegistrationTests : IAsyncLifetime
     [InlineData("email", "ana staff@example.com")]
     [InlineData("password", "12345")]
     [InlineData("password", "1234567890123")]
+    [InlineData("nationalIdentificationNumber", "0123456")]
+    [InlineData("nationalIdentificationNumber", "0.123.456-7")]
     [InlineData("staffRole", "Patient")]
     [InlineData("staffRole", "Doctor")]
     [InlineData("staffRole", "0")]
@@ -188,6 +191,22 @@ public class StaffRegistrationTests : IAsyncLifetime
         Assert.NotNull(result);
         Assert.Equal("EMP-000003", result.EmployeeNumber);
         Assert.Equal((3, 2, 2, 1, 0), await GetCountsAsync());
+    }
+
+    [Fact]
+    public async Task Register_WithIdentificationOwnedByPatient_ReturnsConflictAndRollsBack()
+    {
+        using var patient = await client.PostAsJsonAsync("/api/patients/register", new RegisterPatientRequest
+        {
+            FirstName = "Ana", LastName = "Perez", Email = "patient@example.com", Password = Password,
+            NationalIdentificationNumber = "01234567", PhoneNumber = "+598 99 123 456", DateOfBirth = new DateOnly(2000, 1, 1)
+        });
+        Assert.Equal(HttpStatusCode.Created, patient.StatusCode);
+        var request = CreateRequest();
+        request.NationalIdentificationNumber = "01234567";
+        using var duplicate = await client.PostAsJsonAsync(RegistrationUrl, request);
+        Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
+        Assert.Equal((2, 1, 1, 1, 0), await GetCountsAsync());
     }
 
     [Fact]
@@ -267,9 +286,13 @@ public class StaffRegistrationTests : IAsyncLifetime
         }
     }
 
-    private async Task<AuthenticationResponse> LoginAsync(string email, string password)
+    private async Task<AuthenticationResponse> LoginFixtureAccountAsync(string email, string password)
     {
-        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HospitalDbContext>();
+        var identificationNumber = await db.Users.Where(user => user.Email == email)
+            .Select(user => user.NationalIdentificationNumber).SingleAsync();
+        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { NationalIdentificationNumber = identificationNumber!, Password = password });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<AuthenticationResponse>())!;
     }
@@ -289,7 +312,7 @@ public class StaffRegistrationTests : IAsyncLifetime
         var now = DateTimeOffset.UtcNow;
         var user = new User
         {
-            FirstName = "Test", LastName = "User", Email = role.ToLowerInvariant() + "@example.com", PasswordHash = string.Empty,
+            FirstName = "Test", LastName = "User", Email = role.ToLowerInvariant() + "@example.com", NationalIdentificationNumber = "01000000", PasswordHash = string.Empty,
             ProfileType = role == "Patient" ? ProfileType.Patient : role == "Doctor" ? ProfileType.Doctor : ProfileType.Staff,
             AccountStatus = status, CreatedAt = now, UpdatedAt = now
         };
@@ -298,7 +321,7 @@ public class StaffRegistrationTests : IAsyncLifetime
         if (user.ProfileType == ProfileType.Patient)
             db.Patients.Add(new Patient
             {
-                UserId = user.Id, NationalIdentificationNumber = "01234567",
+                UserId = user.Id,
                 PhoneNumber = "+598 99 123 456", DateOfBirth = new DateOnly(2000, 1, 1)
             });
         else
@@ -313,8 +336,8 @@ public class StaffRegistrationTests : IAsyncLifetime
         return user;
     }
 
-    private static RegisterStaffRequest CreateRequest(string email = " Ana+staff@Example.com ", StaffRole role = StaffRole.Receptionist) => new()
+    private RegisterStaffRequest CreateRequest(string email = " Ana+staff@Example.com ", StaffRole role = StaffRole.Receptionist) => new()
     {
-        FirstName = "Ana", LastName = "Perez", Email = email, Password = " Ab1!_? ", StaffRole = role
+        FirstName = "Ana", LastName = "Perez", Email = email, NationalIdentificationNumber = Interlocked.Increment(ref identificationSequence).ToString("D8"), Password = " Ab1!_? ", StaffRole = role
     };
 }

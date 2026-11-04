@@ -39,6 +39,7 @@ public class StaffRegistrationService : IStaffRegistrationService
             FirstName = request.FirstName,
             LastName = request.LastName,
             Email = normalizedEmail,
+            NationalIdentificationNumber = request.NationalIdentificationNumber,
             PasswordHash = string.Empty,
             ProfileType = ProfileType.Staff,
             AccountStatus = AccountStatus.Active,
@@ -73,11 +74,16 @@ public class StaffRegistrationService : IStaffRegistrationService
         }
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException
         {
-            SqlState: PostgresErrorCodes.UniqueViolation,
-            ConstraintName: "IX_Users_Email"
-        })
+            SqlState: PostgresErrorCodes.UniqueViolation
+        } databaseError)
         {
-            throw new ConflictException("Email is already registered.");
+            if (databaseError.ConstraintName == "IX_Users_Email")
+                throw new ConflictException("Email is already registered.");
+
+            if (databaseError.ConstraintName == "IX_Users_NationalIdentificationNumber")
+                throw new ConflictException("Identification number is already registered.");
+
+            throw;
         }
     }
 }

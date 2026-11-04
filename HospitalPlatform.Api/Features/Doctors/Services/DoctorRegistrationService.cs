@@ -40,6 +40,7 @@ public class DoctorRegistrationService : IDoctorRegistrationService
             FirstName = request.FirstName,
             LastName = request.LastName,
             Email = normalizedEmail,
+            NationalIdentificationNumber = request.NationalIdentificationNumber,
             PasswordHash = string.Empty,
             ProfileType = ProfileType.Doctor,
             AccountStatus = AccountStatus.Active,
@@ -79,6 +80,9 @@ public class DoctorRegistrationService : IDoctorRegistrationService
         {
             if (databaseError.ConstraintName == "IX_Users_Email")
                 throw new ConflictException("Email is already registered.");
+
+            if (databaseError.ConstraintName == "IX_Users_NationalIdentificationNumber")
+                throw new ConflictException("Identification number is already registered.");
 
             if (databaseError.ConstraintName == "IX_Doctors_MedicalLicenseNumber")
                 throw new ConflictException("Medical license number is already registered.");

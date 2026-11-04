@@ -39,6 +39,7 @@ public class PatientRegistrationService : IPatientRegistrationService
             FirstName = request.FirstName,
             LastName = request.LastName,
             Email = normalizedEmail,
+            NationalIdentificationNumber = request.NationalIdentificationNumber,
             PasswordHash = string.Empty,
             ProfileType = ProfileType.Patient,
             AccountStatus = AccountStatus.PendingVerification,
@@ -50,7 +51,6 @@ public class PatientRegistrationService : IPatientRegistrationService
         var patient = new Patient
         {
             UserId = user.Id,
-            NationalIdentificationNumber = request.NationalIdentificationNumber,
             PhoneNumber = request.PhoneNumber,
             DateOfBirth = request.DateOfBirth
         };
@@ -73,7 +73,7 @@ public class PatientRegistrationService : IPatientRegistrationService
             if (databaseError.ConstraintName == "IX_Users_Email")
                 throw new ConflictException("Email is already registered.");
 
-            if (databaseError.ConstraintName == "IX_Patients_NationalIdentificationNumber")
+            if (databaseError.ConstraintName == "IX_Users_NationalIdentificationNumber")
                 throw new ConflictException("Identification number is already registered.");
 
             throw;
@@ -99,7 +99,7 @@ public class PatientRegistrationService : IPatientRegistrationService
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
-                NationalIdentificationNumber = patient.NationalIdentificationNumber,
+                NationalIdentificationNumber = user.NationalIdentificationNumber!,
                 PhoneNumber = patient.PhoneNumber,
                 DateOfBirth = patient.DateOfBirth,
                 AccountStatus = user.AccountStatus.ToString()

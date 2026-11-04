@@ -8,7 +8,6 @@ using HospitalPlatform.Api.Features.Authentication.DTOs;
 using HospitalPlatform.Api.Features.Authentication.Models;
 using HospitalPlatform.Api.Features.Authentication.Settings;
 using HospitalPlatform.Api.Features.Users.Models;
-using HospitalPlatform.Api.Features.Users.Validation;
 using HospitalPlatform.Api.Infrastructure.Middleware.Exceptions;
 using HospitalPlatform.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -120,16 +119,14 @@ public class AuthenticationService : IAuthenticationService
     public async Task<AuthenticationResponse> LoginAsync(LoginRequest request)
     {
         Validator.ValidateObject(request, new ValidationContext(request), validateAllProperties: true);
-        if (!EmailNormalizer.TryNormalize(request.Email, out var email))
-            throw new BadRequestException("Email must be a valid email address.");
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
         var user = await _db.Users.FromSqlInterpolated(
-            $"SELECT * FROM \"Users\" WHERE \"Email\" = {email} FOR SHARE")
+            $"SELECT * FROM \"Users\" WHERE \"NationalIdentificationNumber\" = {request.NationalIdentificationNumber} FOR SHARE")
             .AsNoTracking().SingleOrDefaultAsync();
 
         if (user == null || _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password) == PasswordVerificationResult.Failed)
-            throw new UnauthorizedException("Email or password is incorrect.");
+            throw new UnauthorizedException("Identification number or password is incorrect.");
 
         var now = DateTimeOffset.UtcNow;
         var session = new AuthenticationSession { UserId = user.Id, CreatedAt = now, ExpiresAt = now.AddDays(SessionLifetimeDays) };

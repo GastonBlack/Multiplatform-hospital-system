@@ -23,6 +23,7 @@ public class DoctorRegistrationTests : IAsyncLifetime
 {
     private const string RegistrationUrl = "/api/doctors/register";
     private const string Password = "Ab1!_?xy";
+    private int identificationSequence = 20000000;
     private readonly HospitalApiFactory factory = new();
     private HttpClient client = null!;
 
@@ -32,8 +33,8 @@ public class DoctorRegistrationTests : IAsyncLifetime
         client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
         using var scope = factory.Services.CreateScope();
         await DatabaseSeed.SeedAsync(scope.ServiceProvider.GetRequiredService<HospitalDbContext>(),
-            scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), Password);
-        await AuthorizeAsync("administrator0101@gmail.com", Password);
+            scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), Password, "90000001");
+        await AuthorizeFixtureAccountAsync("administrator0101@gmail.com", Password);
     }
 
     public async ValueTask DisposeAsync()
@@ -115,7 +116,7 @@ public class DoctorRegistrationTests : IAsyncLifetime
                 "Doctor" => client.PostAsJsonAsync(RegistrationUrl, CreateRequest(email, "ACTOR-001")),
                 _ => client.PostAsJsonAsync("/api/staff/register", new RegisterStaffRequest
                 {
-                    FirstName = "Test", LastName = "Receptionist", Email = email, Password = Password, StaffRole = StaffRole.Receptionist
+                    FirstName = "Test", LastName = "Receptionist", Email = email, NationalIdentificationNumber = "33333333", Password = Password, StaffRole = StaffRole.Receptionist
                 })
             });
             Assert.Equal(HttpStatusCode.Created, actor.StatusCode);
@@ -126,7 +127,7 @@ public class DoctorRegistrationTests : IAsyncLifetime
             (await db.Users.SingleAsync(user => user.Email == email)).AccountStatus = status;
             await db.SaveChangesAsync();
         }
-        await AuthorizeAsync(email, role == "Doctor" ? CreateRequest().Password : Password);
+        await AuthorizeFixtureAccountAsync(email, role == "Doctor" ? CreateRequest().Password : Password);
         var before = await GetCountsAsync();
         using var response = await client.PostAsJsonAsync(RegistrationUrl, CreateRequest());
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -140,6 +141,8 @@ public class DoctorRegistrationTests : IAsyncLifetime
     [InlineData("email", "medico turnos@example.com")]
     [InlineData("password", "12345")]
     [InlineData("password", "1234567890123")]
+    [InlineData("nationalIdentificationNumber", "")]
+    [InlineData("nationalIdentificationNumber", "0.123.456-7")]
     [InlineData("medicalLicenseNumber", "")]
     [InlineData("medicalLicenseNumber", " \t ")]
     public async Task Register_WithInvalidData_ReturnsBadRequestWithoutSaving(string field, string value)
@@ -192,6 +195,46 @@ public class DoctorRegistrationTests : IAsyncLifetime
         Assert.NotNull(result);
         Assert.Equal("EMP-000003", result.EmployeeNumber);
         Assert.Equal((2, 1, 2), await GetCountsAsync());
+    }
+
+    [Fact]
+    public async Task Register_WithIdentificationOwnedByStaff_ReturnsConflictAndRollsBack()
+    {
+        var request = CreateRequest();
+        request.NationalIdentificationNumber = "90000001";
+        using var duplicate = await client.PostAsJsonAsync(RegistrationUrl, request);
+        Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
+        Assert.Equal((1, 0, 1), await GetCountsAsync());
+    }
+
+    [Fact]
+    public async Task Register_WithConcurrentStaffAndDoctorIdentification_CommitsOnlyOneAccount()
+    {
+        var doctor = CreateRequest();
+        doctor.NationalIdentificationNumber = "01234567";
+        var responses = await Task.WhenAll(
+            client.PostAsJsonAsync(RegistrationUrl, doctor),
+            client.PostAsJsonAsync("/api/staff/register", new RegisterStaffRequest
+            {
+                FirstName = "Test", LastName = "Receptionist", Email = "staff@example.com", Password = Password,
+                NationalIdentificationNumber = "01234567", StaffRole = StaffRole.Receptionist
+            }));
+        try
+        {
+            Assert.Single(responses, response => response.StatusCode == HttpStatusCode.Created);
+            Assert.Single(responses, response => response.StatusCode == HttpStatusCode.Conflict);
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<HospitalDbContext>();
+            Assert.Equal(2, await db.Users.CountAsync());
+            Assert.Equal(2, await db.EmployeeNumbers.CountAsync());
+            Assert.Equal(2, await db.Doctors.CountAsync() + await db.Staff.CountAsync());
+            Assert.Equal(1, await db.Users.CountAsync(user => user.NationalIdentificationNumber == "01234567"));
+        }
+        finally
+        {
+            foreach (var response in responses)
+                response.Dispose();
+        }
     }
 
     [Theory]
@@ -275,7 +318,7 @@ public class DoctorRegistrationTests : IAsyncLifetime
             client.PostAsJsonAsync(RegistrationUrl, CreateRequest("second@example.com", "LIC-002")),
             client.PostAsJsonAsync("/api/staff/register", new RegisterStaffRequest
             {
-                FirstName = "Test", LastName = "Receptionist", Email = "staff@example.com", Password = Password, StaffRole = StaffRole.Receptionist
+                FirstName = "Test", LastName = "Receptionist", Email = "staff@example.com", NationalIdentificationNumber = "33333333", Password = Password, StaffRole = StaffRole.Receptionist
             }));
         try
         {
@@ -295,9 +338,13 @@ public class DoctorRegistrationTests : IAsyncLifetime
         }
     }
 
-    private async Task AuthorizeAsync(string email, string password)
+    private async Task AuthorizeFixtureAccountAsync(string email, string password)
     {
-        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HospitalDbContext>();
+        var identificationNumber = await db.Users.Where(user => user.Email == email)
+            .Select(user => user.NationalIdentificationNumber).SingleAsync();
+        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { NationalIdentificationNumber = identificationNumber!, Password = password });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var tokens = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
         Assert.NotNull(tokens);
@@ -311,8 +358,8 @@ public class DoctorRegistrationTests : IAsyncLifetime
         return (await db.Users.CountAsync(), await db.Doctors.CountAsync(), await db.EmployeeNumbers.CountAsync());
     }
 
-    private static RegisterDoctorRequest CreateRequest(string email = " Medico+turnos@Example.com ", string license = " 00012345 ") => new()
+    private RegisterDoctorRequest CreateRequest(string email = " Medico+turnos@Example.com ", string license = " 00012345 ") => new()
     {
-        FirstName = "Maria", LastName = "Gomez", Email = email, Password = " Ab1!_? ", MedicalLicenseNumber = license
+        FirstName = "Maria", LastName = "Gomez", Email = email, NationalIdentificationNumber = Interlocked.Increment(ref identificationSequence).ToString("D8"), Password = " Ab1!_? ", MedicalLicenseNumber = license
     };
 }

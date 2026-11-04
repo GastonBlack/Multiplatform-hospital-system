@@ -51,9 +51,9 @@ public class AuthenticationTests : IAsyncLifetime
     // //////////////////////////////////////////
     // Helpers
     // //////////////////////////////////////////
-    private async Task<AuthenticationResponse> LoginAsync(string email = " ANA@EXAMPLE.COM ", string password = " Ab1!_? ")
+    private async Task<AuthenticationResponse> LoginAsync(string nationalIdentificationNumber = "01234567", string password = " Ab1!_? ")
     {
-        using var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
+        using var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest { NationalIdentificationNumber = nationalIdentificationNumber, Password = password });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var tokens = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
         Assert.NotNull(tokens);
@@ -79,7 +79,7 @@ public class AuthenticationTests : IAsyncLifetime
         var now = DateTimeOffset.UtcNow;
         var user = new User
         {
-            FirstName = "Staff", LastName = "Test", Email = "staff@example.com", PasswordHash = string.Empty,
+            FirstName = "Staff", LastName = "Test", Email = "staff@example.com", NationalIdentificationNumber = "87654321", PasswordHash = string.Empty,
             ProfileType = ProfileType.Staff, AccountStatus = AccountStatus.Active, CreatedAt = now, UpdatedAt = now
         };
         user.PasswordHash = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>().HashPassword(user, " Ab1!_? ");
@@ -137,14 +137,57 @@ public class AuthenticationTests : IAsyncLifetime
     }
 
     [Theory]
-    [InlineData("ana@example.com", "wrong123")]
-    [InlineData("unknown@example.com", " Ab1!_? ")]
-    public async Task Login_WithWrongCredentials_ReturnsUnauthorizedWithoutSession(string email, string password)
+    [InlineData("01234567", "wrong123")]
+    [InlineData("87654321", " Ab1!_? ")]
+    public async Task Login_WithWrongCredentials_ReturnsUnauthorizedWithoutSession(string nationalIdentificationNumber, string password)
     {
-        using var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
+        using var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest { NationalIdentificationNumber = nationalIdentificationNumber, Password = password });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         using var scope = _factory.Services.CreateScope();
         Assert.Equal(0, await scope.ServiceProvider.GetRequiredService<HospitalDbContext>().AuthenticationSessions.CountAsync());
+    }
+
+    [Theory]
+    [InlineData("0123456")]
+    [InlineData("012345678")]
+    [InlineData("0.123.456-7")]
+    [InlineData(" 01234567")]
+    [InlineData("01234567\n")]
+    [InlineData("１２３４５６７８")]
+    [InlineData("ana@example.com")]
+    public async Task Login_WithInvalidIdentification_ReturnsBadRequestWithoutSession(string identification)
+    {
+        using var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest
+        {
+            NationalIdentificationNumber = identification, Password = " Ab1!_? "
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        Assert.Equal(0, await scope.ServiceProvider.GetRequiredService<HospitalDbContext>().AuthenticationSessions.CountAsync());
+    }
+
+    [Fact]
+    public async Task Login_WithOldEmailBodyOrNumericIdentification_ReturnsBadRequest()
+    {
+        using var oldBody = await _client.PostAsJsonAsync("/api/auth/login", new { email = "ana@example.com", password = " Ab1!_? " });
+        Assert.Equal(HttpStatusCode.BadRequest, oldBody.StatusCode);
+        using var numericBody = await _client.PostAsJsonAsync("/api/auth/login", new { nationalIdentificationNumber = 1234567, password = " Ab1!_? " });
+        Assert.Equal(HttpStatusCode.BadRequest, numericBody.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        Assert.Equal(0, await scope.ServiceProvider.GetRequiredService<HospitalDbContext>().AuthenticationSessions.CountAsync());
+    }
+
+    [Fact]
+    public async Task Login_AfterEmailChanges_StillUsesTheSameIdentification()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<HospitalDbContext>();
+            (await db.Users.SingleAsync()).Email = "updated@example.com";
+            await db.SaveChangesAsync();
+        }
+        var tokens = await LoginAsync();
+        Assert.False(string.IsNullOrEmpty(tokens.AccessToken));
     }
 
     [Theory]
@@ -276,7 +319,7 @@ public class AuthenticationTests : IAsyncLifetime
             user.AccountStatus = status;
             await db.SaveChangesAsync();
         }
-        using var login = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = "ana@example.com", Password = " Ab1!_? " });
+        using var login = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest { NationalIdentificationNumber = "01234567", Password = " Ab1!_? " });
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         using var refresh = await RefreshAsync(tokens.RefreshToken);
         Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
@@ -333,7 +376,7 @@ public class AuthenticationTests : IAsyncLifetime
     public async Task StaffPermissions_UseCurrentRoleInsteadOfJwtSnapshot()
     {
         var staffUser = await CreateStaffAsync(StaffRole.Administrator);
-        var tokens = await LoginAsync("staff@example.com");
+        var tokens = await LoginAsync("87654321");
         var staleToken = AddStalePermissions(tokens.AccessToken, "Administrator");
         using var allowed = await SendAuthenticatedAsync(HttpMethod.Get, "/__tests/authorization/administrator", staleToken);
         Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);

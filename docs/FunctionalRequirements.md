@@ -46,7 +46,7 @@ The system shall allow registered users to authenticate using their credentials.
 
 This applies to every profile and AccountStatus, including PendingVerification, Suspended, and Deactivated. Authentication permits read-only access to the caller's own account/profile and current status; it does not grant permission for other protected operations.
 
-Email-based login shall use the same NormalizeEmail policy as account creation and permitted email changes, as defined in BR-ACC-001: trim exterior whitespace, convert to lowercase independently of server culture, and reject internal whitespace without removing it.
+All profiles shall authenticate using NationalIdentificationNumber and password, not email. The identification number belongs to User and must contain exactly eight ASCII digits as entered, preserving leading zeros. Reject whitespace, punctuation, and non-digit input without repairing it. Email remains required and unique for contact and uses the normalization policy in BR-ACC-001.
 
 ---
 
@@ -192,7 +192,7 @@ This shall include at least:
 - date of birth;
 - phone number.
 
-FirstName, LastName, Email, and PasswordHash belong to User. NationalIdentificationNumber, DateOfBirth, and PhoneNumber belong to the Patient profile.
+FirstName, LastName, Email, NationalIdentificationNumber, and PasswordHash belong to User. DateOfBirth and PhoneNumber belong to the Patient profile.
 
 Public patient registration requires first and last names of 2–120 characters each, an email input of at most 150 characters, a password of 6–12 characters inclusive, and a required phone number of at most 30 characters with general phone-format validation. These string-length limits use .NET UTF-16 length. Validate email through the shared NormalizeEmail policy, allowing exterior whitespace while rejecting internal whitespace; registration must persist only the canonical value. Passwords are not trimmed or case-normalized, and no letter/digit/symbol composition rule is required. DateOfBirth must be supplied and cannot be later than the current hospital-local date in America/Montevideo. Identification-number input follows FR-PAT-005's strict eight-digit rule.
 

@@ -140,12 +140,14 @@ if (app.Configuration.GetValue<bool>("seed"))
 {
     var password = app.Configuration["DatabaseSeed:Administrator:Password"]
         ?? throw new InvalidOperationException("Configure DatabaseSeed:Administrator:Password before running the database seed.");
+    var nationalIdentificationNumber = app.Configuration["DatabaseSeed:Administrator:NationalIdentificationNumber"]
+        ?? throw new InvalidOperationException("Configure DatabaseSeed:Administrator:NationalIdentificationNumber before running the database seed.");
     await using (var scope = app.Services.CreateAsyncScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<HospitalDbContext>();
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
         await db.Database.MigrateAsync();
-        await DatabaseSeed.SeedAsync(db, passwordHasher, password);
+        await DatabaseSeed.SeedAsync(db, passwordHasher, password, nationalIdentificationNumber);
     }
     app.Logger.LogInformation("Database seed completed.");
     await app.DisposeAsync();

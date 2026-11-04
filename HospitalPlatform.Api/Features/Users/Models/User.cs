@@ -7,6 +7,8 @@ public class User
     public required string FirstName { get; set; }
     public required string LastName { get; set; }
     public required string Email { get; set; }
+    // Nullable only to preserve existing employee accounts until their identification is supplied.
+    public string? NationalIdentificationNumber { get; set; }
     public required string PasswordHash { get; set; }
 
     public required ProfileType ProfileType { get; set; }
