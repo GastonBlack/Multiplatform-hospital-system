@@ -5,6 +5,8 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using HospitalPlatform.Api.Features.Doctors.Models;
 using HospitalPlatform.Api.Features.Authentication.DTOs;
 using HospitalPlatform.Api.Features.Authentication.Settings;
 using HospitalPlatform.Api.Features.Patients.DTOs;
@@ -290,6 +292,107 @@ public class AuthenticationTests : IAsyncLifetime
     // //////////////////////////////////////////
     // Logout and current permissions
     // //////////////////////////////////////////
+    [Theory]
+    [InlineData(StaffRole.Administrator)]
+    [InlineData(StaffRole.Receptionist)]
+    public async Task Session_ReturnsCurrentStaffRoleAndExistingNumericFields(StaffRole role)
+    {
+        var user = await CreateStaffAsync(role);
+        var tokens = await LoginAsync("87654321");
+        using var response = await SendAuthenticatedAsync(HttpMethod.Get, "/api/auth/session", tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var body = json.RootElement;
+        Assert.Equal(5, body.EnumerateObject().Count());
+        Assert.Equal(user.Id, body.GetProperty("userId").GetGuid());
+        Assert.Equal(Guid.Parse(new JwtSecurityTokenHandler().ReadJwtToken(tokens.AccessToken).Claims.Single(claim => claim.Type == "sid").Value), body.GetProperty("sessionId").GetGuid());
+        Assert.Equal(3, body.GetProperty("profileType").GetInt32());
+        Assert.Equal(2, body.GetProperty("accountStatus").GetInt32());
+        Assert.Equal(role.ToString(), body.GetProperty("role").GetString());
+    }
+
+    [Fact]
+    public async Task Session_ReturnsPatientRoleWithoutTrustingPrivilegedJwtClaim()
+    {
+        var tokens = await LoginAsync();
+        using var response = await SendAuthenticatedAsync(HttpMethod.Get, "/api/auth/session", AddStalePermissions(tokens.AccessToken, "Administrator"));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var session = await response.Content.ReadFromJsonAsync<CurrentSessionResponse>();
+        Assert.NotNull(session);
+        Assert.Equal("Patient", session.Role);
+    }
+
+    [Fact]
+    public async Task Session_ReturnsDoctorRole()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<HospitalDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            var user = new User
+            {
+                FirstName = "Doctor", LastName = "Test", Email = "doctor@example.com", NationalIdentificationNumber = "87654321", PasswordHash = string.Empty,
+                ProfileType = ProfileType.Doctor, AccountStatus = AccountStatus.Active, CreatedAt = now, UpdatedAt = now
+            };
+            user.PasswordHash = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>().HashPassword(user, " Ab1!_? ");
+            db.Users.Add(user);
+            db.EmployeeNumbers.Add(new EmployeeNumberRegistration { UserId = user.Id, EmployeeNumber = "EMP-000001" });
+            db.Doctors.Add(new Doctor { UserId = user.Id, EmployeeNumber = "EMP-000001", MedicalLicenseNumber = "DOC-001" });
+            await db.SaveChangesAsync();
+        }
+        var tokens = await LoginAsync("87654321");
+        using var response = await SendAuthenticatedAsync(HttpMethod.Get, "/api/auth/session", tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var session = await response.Content.ReadFromJsonAsync<CurrentSessionResponse>();
+        Assert.NotNull(session);
+        Assert.Equal("Doctor", session.Role);
+    }
+
+    [Theory]
+    [InlineData(AccountStatus.PendingVerification)]
+    [InlineData(AccountStatus.Suspended)]
+    [InlineData(AccountStatus.Deactivated)]
+    public async Task Session_NonActiveAdministratorCanReadSessionButCannotAdminister(AccountStatus status)
+    {
+        var user = await CreateStaffAsync(StaffRole.Administrator);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<HospitalDbContext>();
+            (await db.Users.SingleAsync(account => account.Id == user.Id)).AccountStatus = status;
+            await db.SaveChangesAsync();
+        }
+        var tokens = await LoginAsync("87654321");
+        using var response = await SendAuthenticatedAsync(HttpMethod.Get, "/api/auth/session", tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var session = await response.Content.ReadFromJsonAsync<CurrentSessionResponse>();
+        Assert.NotNull(session);
+        Assert.Equal(status, session.AccountStatus);
+        Assert.Equal("Administrator", session.Role);
+        using var denied = await SendAuthenticatedAsync(HttpMethod.Post, "/api/staff/register", tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+    }
+
+    [Fact]
+    public async Task Session_ReflectsDatabaseRoleChangeWithPreviouslyIssuedJwt()
+    {
+        var user = await CreateStaffAsync(StaffRole.Administrator);
+        var tokens = await LoginAsync("87654321");
+        using var before = await SendAuthenticatedAsync(HttpMethod.Get, "/api/auth/session", tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, before.StatusCode);
+        Assert.Equal("Administrator", (await before.Content.ReadFromJsonAsync<CurrentSessionResponse>())!.Role);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<HospitalDbContext>();
+            (await db.Staff.SingleAsync(staff => staff.UserId == user.Id)).StaffRole = StaffRole.Receptionist;
+            await db.SaveChangesAsync();
+        }
+        using var after = await SendAuthenticatedAsync(HttpMethod.Get, "/api/auth/session", tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
+        Assert.Equal("Receptionist", (await after.Content.ReadFromJsonAsync<CurrentSessionResponse>())!.Role);
+        using var denied = await SendAuthenticatedAsync(HttpMethod.Get, "/__tests/authorization/administrator", tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+    }
+
     [Fact]
     public async Task Logout_RevokesCurrentSessionWithoutAffectingOtherLogins()
     {

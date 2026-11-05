@@ -51,7 +51,8 @@ public class AuthenticationController : ControllerBase
             UserId = Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!),
             SessionId = Guid.Parse(User.FindFirstValue("sid")!),
             ProfileType = Enum.Parse<ProfileType>(User.FindFirstValue("profile_type")!),
-            AccountStatus = Enum.Parse<AccountStatus>(User.FindFirstValue("account_status")!)
+            AccountStatus = Enum.Parse<AccountStatus>(User.FindFirstValue("account_status")!),
+            Role = User.FindFirstValue(ClaimTypes.Role)
         });
     }
 

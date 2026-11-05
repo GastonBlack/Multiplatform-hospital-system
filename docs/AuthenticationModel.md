@@ -88,7 +88,21 @@ Revocation applies to subsequent checks. A write already executing still needs i
 - POST /api/auth/login accepts nationalIdentificationNumber (exactly eight ASCII digits as text) and password for all profiles, using the unique identifier on User instead of email. It validates credentials and creates a session plus its first refresh-token hash atomically.
 - POST /api/auth/refresh consumes the old token and inserts its replacement under User-before-session locks. Reuse commits session revocation before returning 401.
 - POST /api/auth/logout requires a bearer token and revokes only its current session, returning 204.
-- GET /api/auth/session returns the caller's UserId, SessionId, ProfileType, and current AccountStatus. Every account state may access it and log out.
+- GET /api/auth/session returns the caller's userId and sessionId as UUID strings, profileType and accountStatus as numeric enums, and role as text (Patient, Doctor, Receptionist, or Administrator). The role comes from ClaimTypes.Role on the principal validated and updated by JwtSessionEvents using current PostgreSQL permissions; a missing claim returns null, with no privileged fallback. Every account state may access it and log out under AuthenticatedAccount. Role alone does not grant administrative access: protected administrative operations still require the current Administrator role and Active account status on every request. Staff profile type does not imply Administrator.
+
+  Example response:
+
+  ```json
+  {
+    "userId": "c6631629-8cd9-477b-9194-4afce93b30c8",
+    "sessionId": "bc714ca2-714d-41fb-aa0d-69ca05afed10",
+    "profileType": 3,
+    "accountStatus": 2,
+    "role": "Administrator"
+  }
+  ```
+
+  Changes to StaffRole in PostgreSQL are reflected on the next session request with an already-issued valid JWT. Non-active administrators still receive their actual role in the session response but cannot perform administrative operations. The frontend must check both role and accountStatus for navigation; the API remains the authority for permissions. Login, refresh, logout, and JWT formats are unchanged.
 - GET /api/users/me returns UserId, FirstName, LastName, Email, ProfileType, and AccountStatus for the caller, in every account state. ProfileType and AccountStatus are returned as text. GET /api/patients/me returns the caller's patient data and AccountStatus as text, with the Patient role required. Neither endpoint accepts a target user ID or returns password data.
 - Access tokens use HS256 with one configured random signing key of at least 32 characters, issuer HospitalPlatform, and audience HospitalPlatform.Api. Validate signature, allowed algorithm, issuer, audience, and expiry with zero clock skew. The local development key is stored in user-secrets; tests generate an isolated key per host. Replacing the configured key invalidates existing access JWTs; refresh sessions remain subject to their database state.
 - Refresh credentials contain 32 random bytes represented as 64 hexadecimal characters. Store SHA-256 of the exact returned text, not the credential itself. Tokens are opaque and are not normalized.
