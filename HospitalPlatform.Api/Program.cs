@@ -88,6 +88,14 @@ builder.Services.AddAuthorization(options =>
 // API Services
 // //////////////////////////////////////////
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+        policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod();
+    });
+});
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, _, _) =>
@@ -158,6 +166,7 @@ if (app.Configuration.GetValue<bool>("seed"))
 // Middleware
 // //////////////////////////////////////////
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
